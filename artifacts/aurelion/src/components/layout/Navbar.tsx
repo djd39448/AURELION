@@ -58,6 +58,19 @@ export function Navbar() {
               </Link>
             ))}
 
+            {user?.isAuthenticated && (
+              <Link
+                href="/dashboard"
+                className={`text-sm uppercase tracking-widest transition-colors ${
+                  location === "/dashboard"
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                My Dashboard
+              </Link>
+            )}
+
             {user?.isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -139,9 +152,13 @@ export function Navbar() {
                   <Link
                     href="/dashboard"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-3 py-4 text-base uppercase tracking-widest text-foreground hover:bg-primary/5 rounded-md"
+                    className={`block px-3 py-4 text-base uppercase tracking-widest rounded-md transition-colors ${
+                      location === "/dashboard"
+                        ? "text-primary bg-primary/5"
+                        : "text-foreground hover:bg-primary/5"
+                    }`}
                   >
-                    Dashboard
+                    My Dashboard
                   </Link>
                   {user.role === "admin" && (
                     <Link
