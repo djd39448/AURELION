@@ -1,0 +1,50 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "2Cay-TK9OwD0gDo8pCk6Y"
+uri = "file://artifacts/aurelion/public/hero.png"
+type = "image"
+title = "Aruba luxury beach hero"
+
+[[generated]]
+id = "Xj6uvaWL9YxuiUQS723UY"
+uri = "file://artifacts/aurelion/public/category-cliff.png"
+type = "image"
+title = "Cliff and vertical adventure"
+
+[[generated]]
+id = "F4bKwo7yGdiK0li0tpbGd"
+uri = "file://artifacts/aurelion/public/category-offroad.png"
+type = "image"
+title = "Off-road expedition aruba"
+
+[[generated]]
+id = "IaKJwBGvzaQDWFX52ahtf"
+uri = "file://artifacts/aurelion/public/category-ocean.png"
+type = "image"
+title = "Ocean exploration diving"
+
+[[generated]]
+id = "MxZKJA3VoPdgpC8GMR1F9"
+uri = "file://artifacts/aurelion/public/category-wild.png"
+type = "image"
+title = "Wild terrain aruba"
+
+[[generated]]
+id = "rUHuzywSvDcuiti-w9huH"
+uri = "file://artifacts/aurelion/public/category-water.png"
+type = "image"
+title = "Water and wind sports"
+
+[[generated]]
+id = "CuEIIHM87UziAbtFGdZUi"
+uri = "file://artifacts/aurelion/public/category-riding.png"
+type = "image"
+title = "Scenic riding horseback"
+
+[[generated]]
+id = "8arfCOAdLScST3WmJIGye"
+uri = "file://artifacts/aurelion/public/about-hero.png"
+type = "image"
+title = "About us brand hero"

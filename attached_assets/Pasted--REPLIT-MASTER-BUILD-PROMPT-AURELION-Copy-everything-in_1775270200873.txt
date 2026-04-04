@@ -1,0 +1,470 @@
+# 🚀 REPLIT MASTER BUILD PROMPT — AURELION
+
+Copy everything in this file into Replit.
+
+---
+
+## 🧠 ROLE
+
+You are a senior full-stack product engineer, AI systems engineer, and UX designer.
+
+Build a production-quality MVP web application called:
+
+# **AURELION**
+
+---
+
+## ✨ BRAND POSITIONING
+
+AURELION is a **luxury Aruba adventure planning platform**.
+
+It is NOT a booking site.
+
+It provides:
+- curated experiences
+- structured itineraries
+- booking intelligence
+- AI-powered planning assistance
+
+### Tagline
+**Precision-crafted adventure itineraries for Aruba.**
+
+### Core Promise
+Help users:
+- plan their trip correctly the first time
+- avoid mistakes
+- discover better experiences faster
+
+---
+
+## 💰 BUSINESS MODEL
+
+### 🟢 Tier A — Free
+- browse all activities
+- search and filter
+- build rough itinerary
+- cannot export itinerary
+- cannot access booking intelligence
+- cannot use AI concierge
+
+---
+
+### 🔵 Tier B — $9.99 (Structured Itinerary)
+**One-time purchase per itinerary**
+
+Includes:
+- itinerary export (dashboard + email)
+- day-by-day structure
+- activity summaries
+- provider name + website + basic contact info
+- basic scheduling suggestions
+
+Does NOT include:
+- booking strategies
+- insider tips
+- optimization logic
+- AI concierge
+
+---
+
+### 🟣 Tier C — $49.99 (Concierge Intelligence Plan)
+**One-time purchase per itinerary**
+
+Includes everything in Tier B plus:
+
+#### 🤖 AI Concierge Chat
+- natural language planning
+- itinerary building assistance
+- timing optimization
+- activity recommendations
+
+#### 📞 Booking Intelligence
+- who to contact
+- how to contact
+- when to contact
+- what to say
+
+#### 🧠 Insider Intelligence
+- best times to go
+- what to avoid
+- crowd patterns
+- sequencing strategy
+
+#### 🧭 Optimization Layer
+- route-aware planning
+- avoid overbooking days
+- experience pacing
+
+---
+
+## 🏝️ EXPERIENCE CATEGORIES
+
+Use these EXACT categories:
+
+### 1. Cliff & Vertical Adventures
+- rappelling
+- rock climbing
+
+### 2. Off-Road Expeditions
+- ATV tours
+- Jeep tours through Arikok National Park
+
+### 3. Ocean Exploration
+- snorkeling
+- scuba diving (wreck + reef)
+
+### 4. Wild Terrain & Natural Wonders
+- hiking
+- caves
+- Natural Pool
+
+### 5. Water & Wind Sports
+- paddleboarding
+- kayaking
+- kite surfing
+- parasailing
+- waterskiing
+
+### 6. Scenic Riding
+- horseback riding
+
+---
+
+## ⚙️ TECH STACK
+
+Use:
+
+- Next.js (App Router, TypeScript)
+- Tailwind CSS
+- Prisma ORM
+- PostgreSQL
+- NextAuth or Clerk
+- Stripe
+- OpenAI API
+- Resend (email)
+- Zod validation
+
+---
+
+## 📄 CORE PAGES
+
+### Public Pages
+- Homepage (luxury positioning)
+- Activities Directory
+- Activity Detail Page
+- Pricing Page
+- About Page
+- Login / Signup
+
+### User Pages
+- Dashboard
+- Itinerary Builder
+- Itinerary Detail Page
+- AI Concierge Chat (premium only)
+
+### Admin Pages
+- Admin Dashboard
+- Listings Manager
+- Ingestion Tool
+
+---
+
+## 🧩 DATABASE MODELS (PRISMA)
+
+### User
+- id
+- name
+- email
+- role
+- createdAt
+
+### Provider
+- id
+- name
+- websiteUrl
+- email
+- phone
+- whatsapp
+- description
+- confidenceScore
+- sourceUrl
+
+### Activity
+- id
+- providerId
+- title
+- description
+- category
+- difficulty
+- durationMinutes
+- priceLow
+- priceHigh
+- location
+- imageUrls
+- reviewSummary
+- whatToBring
+- whatToExpect
+- basicBookingGuide
+- premiumBookingGuide
+- insiderTips
+- warnings
+- bestTimeOfDay
+- tags
+
+### Itinerary
+- id
+- userId
+- title
+- totalDays
+- tierType (FREE, BASIC, PREMIUM)
+- status
+
+### ItineraryItem
+- id
+- itineraryId
+- activityId
+- dayNumber
+- timeSlot
+- notes
+
+### Purchase
+- id
+- userId
+- productType
+- amount
+- status
+- stripeSessionId
+
+### ChatSession
+- id
+- userId
+- itineraryId
+
+### ChatMessage
+- id
+- sessionId
+- role
+- content
+
+---
+
+## 🔍 SEARCH FUNCTIONALITY
+
+Support:
+- keyword search
+- category filter
+- difficulty filter
+- duration filter
+- price range
+- location
+
+---
+
+## 🤖 AI CONCIERGE CHAT
+
+### Behavior
+
+The AI must:
+- help plan itineraries
+- recommend activities
+- optimize scheduling
+- prevent bad planning decisions
+
+### Rules
+
+- ONLY use activities from database
+- NEVER hallucinate providers or booking info
+- MUST respect user tier:
+  - free/basic → no booking intelligence
+  - premium → full access
+
+---
+
+### System Prompt
+
+You are a luxury Aruba adventure concierge for AURELION.
+
+Help users:
+- build itineraries
+- optimize timing
+- choose experiences
+- avoid mistakes
+
+Only use activities in the database.
+
+Never invent details.
+
+If user is not premium:
+- do not provide booking strategies or insider tips
+- suggest upgrade
+
+Be concise, structured, and confident.
+
+---
+
+## 💳 STRIPE INTEGRATION
+
+Create 2 products:
+
+- Basic Itinerary → $9.99
+- Concierge Intelligence → $49.99
+
+Implement:
+- checkout flow
+- webhook
+- purchase storage
+- entitlement unlocking
+
+---
+
+## 📧 EMAIL SYSTEM
+
+Use Resend.
+
+Send:
+- purchase confirmation
+- itinerary delivery
+
+### Basic Email
+- itinerary
+- activity list
+- links
+
+### Premium Email
+- full booking guide
+- insider tips
+- timing strategy
+
+---
+
+## 🧠 ITINERARY BUILDER
+
+Features:
+- add/remove activities
+- assign to days
+- time slots (morning/afternoon/evening)
+- reorder
+- save drafts
+
+---
+
+## 🔐 ENTITLEMENT LOGIC
+
+Server-side only.
+
+Create functions:
+- canExportItinerary()
+- canUseAIChat()
+- canViewPremiumContent()
+
+---
+
+## 🧪 ADMIN INGESTION TOOL
+
+- input URL
+- scrape basic data
+- preview
+- approve into DB
+
+NO aggressive crawling.
+
+---
+
+## 🎨 DESIGN STYLE
+
+Luxury + editorial:
+
+- dark + sand + ocean palette
+- large imagery
+- clean layout
+- premium typography
+- no clutter
+
+---
+
+## 🔥 UX REQUIREMENTS
+
+- premium lock states
+- blurred premium previews
+- upgrade CTAs
+- smooth interactions
+- mobile-first
+
+---
+
+## 🌱 SEED DATA
+
+Seed 12–18 Aruba activities across categories.
+
+Each must include:
+- title
+- category
+- description
+- duration
+- price range
+- location
+- tags
+- review summary
+- booking guide (basic + premium)
+
+---
+
+## 🚀 BUILD STAGES
+
+### Stage 1
+- setup
+- auth
+- DB
+- homepage
+- directory
+- activity page
+
+### Stage 2
+- itinerary builder
+- dashboard
+- pricing
+- Stripe
+
+### Stage 3
+- itinerary export
+- email
+- entitlements
+
+### Stage 4
+- AI chat
+
+### Stage 5
+- admin tools
+
+After each stage:
+- explain what was built
+- list env variables
+- give next steps
+
+---
+
+## 🔑 ENV VARIABLES
+
+- DATABASE_URL
+- NEXTAUTH_SECRET
+- STRIPE_SECRET_KEY
+- STRIPE_WEBHOOK_SECRET
+- NEXT_PUBLIC_STRIPE_KEY
+- OPENAI_API_KEY
+- RESEND_API_KEY
+- EMAIL_FROM
+- NEXT_PUBLIC_APP_URL
+
+---
+
+## 🎯 FINAL PRIORITIES
+
+1. premium UX
+2. itinerary builder
+3. payments
+4. AI concierge
+5. admin ingestion
+
+---
+
+Start with **Stage 1**.

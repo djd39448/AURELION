@@ -3,13 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AURELION - Luxury Aruba Adventure Planning Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: activities
+    description: Activity listings
+  - name: itineraries
+    description: Itinerary management
+  - name: auth
+    description: Authentication
+  - name: chat
+    description: AI concierge chat
+  - name: purchases
+    description: Purchases and payments
+  - name: admin
+    description: Admin operations
 paths:
   /healthz:
     get:
@@ -24,6 +36,561 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /activities:
+    get:
+      operationId: listActivities
+      tags: [activities]
+      summary: List all activities
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: maxDuration
+          in: query
+          schema:
+            type: number
+        - name: location
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+
+  /activities/featured:
+    get:
+      operationId: getFeaturedActivities
+      tags: [activities]
+      summary: Get featured activities for homepage
+      responses:
+        "200":
+          description: Featured activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+
+  /activities/categories:
+    get:
+      operationId: getCategories
+      tags: [activities]
+      summary: Get all categories with counts
+      responses:
+        "200":
+          description: Category list with counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategorySummary"
+
+  /activities/{id}:
+    get:
+      operationId: getActivity
+      tags: [activities]
+      summary: Get single activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Activity detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityDetail"
+        "404":
+          description: Not found
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user session
+      responses:
+        "200":
+          description: Current user or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSession"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSession"
+        "400":
+          description: Validation error or email taken
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSession"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+
+  /itineraries:
+    get:
+      operationId: listItineraries
+      tags: [itineraries]
+      summary: List user itineraries
+      responses:
+        "200":
+          description: List of itineraries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Itinerary"
+    post:
+      operationId: createItinerary
+      tags: [itineraries]
+      summary: Create itinerary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateItineraryBody"
+      responses:
+        "201":
+          description: Itinerary created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Itinerary"
+
+  /itineraries/{id}:
+    get:
+      operationId: getItinerary
+      tags: [itineraries]
+      summary: Get itinerary detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Itinerary with items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItineraryDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateItinerary
+      tags: [itineraries]
+      summary: Update itinerary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItineraryBody"
+      responses:
+        "200":
+          description: Updated itinerary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Itinerary"
+    delete:
+      operationId: deleteItinerary
+      tags: [itineraries]
+      summary: Delete itinerary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /itineraries/{id}/items:
+    post:
+      operationId: addItineraryItem
+      tags: [itineraries]
+      summary: Add activity to itinerary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddItineraryItemBody"
+      responses:
+        "201":
+          description: Item added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItineraryItem"
+
+  /itineraries/{id}/items/{itemId}:
+    patch:
+      operationId: updateItineraryItem
+      tags: [itineraries]
+      summary: Update itinerary item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItineraryItemBody"
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItineraryItem"
+    delete:
+      operationId: removeItineraryItem
+      tags: [itineraries]
+      summary: Remove item from itinerary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /itineraries/{id}/export:
+    get:
+      operationId: exportItinerary
+      tags: [itineraries]
+      summary: Export itinerary (requires purchase)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Exported itinerary data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItineraryExport"
+        "403":
+          description: Tier upgrade required
+
+  /chat/sessions:
+    get:
+      operationId: listChatSessions
+      tags: [chat]
+      summary: List chat sessions for user
+      responses:
+        "200":
+          description: Chat sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatSession"
+    post:
+      operationId: createChatSession
+      tags: [chat]
+      summary: Create new chat session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChatSessionBody"
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatSession"
+        "403":
+          description: Premium required
+
+  /chat/sessions/{sessionId}/messages:
+    get:
+      operationId: getChatMessages
+      tags: [chat]
+      summary: Get messages for a chat session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
+    post:
+      operationId: sendChatMessage
+      tags: [chat]
+      summary: Send message to AI concierge
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageBody"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+        "403":
+          description: Premium required
+
+  /purchases/checkout:
+    post:
+      operationId: createCheckout
+      tags: [purchases]
+      summary: Create Stripe checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCheckoutBody"
+      responses:
+        "200":
+          description: Checkout URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResponse"
+
+  /purchases:
+    get:
+      operationId: listPurchases
+      tags: [purchases]
+      summary: List user purchases
+      responses:
+        "200":
+          description: Purchases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Purchase"
+
+  /purchases/webhook:
+    post:
+      operationId: stripeWebhook
+      tags: [purchases]
+      summary: Stripe webhook handler
+      responses:
+        "200":
+          description: Webhook received
+
+  /admin/activities:
+    post:
+      operationId: adminCreateActivity
+      tags: [admin]
+      summary: Create activity (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateActivityBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+
+  /admin/activities/{id}:
+    patch:
+      operationId: adminUpdateActivity
+      tags: [admin]
+      summary: Update activity (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateActivityBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Activity"
+    delete:
+      operationId: adminDeleteActivity
+      tags: [admin]
+      summary: Delete activity (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/ingest:
+    post:
+      operationId: adminIngestUrl
+      tags: [admin]
+      summary: Ingest activity from URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IngestUrlBody"
+      responses:
+        "200":
+          description: Scraped activity preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScrapedActivityPreview"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [itineraries]
+      summary: Get user dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +601,535 @@ components:
       required:
         - status
 
+    Activity:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+        durationMinutes:
+          type: integer
+        priceLow:
+          type: number
+        priceHigh:
+          type: number
+        location:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        reviewSummary:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        whatToBring:
+          type: ["string", "null"]
+        whatToExpect:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - category
+        - difficulty
+        - durationMinutes
+        - priceLow
+        - priceHigh
+        - location
+        - description
+        - tags
+        - createdAt
+
+    ActivityDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+        durationMinutes:
+          type: integer
+        priceLow:
+          type: number
+        priceHigh:
+          type: number
+        location:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        reviewSummary:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        whatToBring:
+          type: ["string", "null"]
+        whatToExpect:
+          type: ["string", "null"]
+        basicBookingGuide:
+          type: ["string", "null"]
+        providerName:
+          type: ["string", "null"]
+        providerWebsite:
+          type: ["string", "null"]
+        providerPhone:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - category
+        - difficulty
+        - durationMinutes
+        - priceLow
+        - priceHigh
+        - location
+        - description
+        - tags
+        - createdAt
+
+    CategorySummary:
+      type: object
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+        imageUrl:
+          type: ["string", "null"]
+      required:
+        - category
+        - count
+
+    UserSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        isAuthenticated:
+          type: boolean
+      required:
+        - isAuthenticated
+
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - email
+        - password
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    Itinerary:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        totalDays:
+          type: integer
+        tierType:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - title
+        - totalDays
+        - tierType
+        - status
+        - createdAt
+        - updatedAt
+
+    ItineraryDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        totalDays:
+          type: integer
+        tierType:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryItemWithActivity"
+      required:
+        - id
+        - userId
+        - title
+        - totalDays
+        - tierType
+        - status
+        - createdAt
+        - updatedAt
+        - items
+
+    ItineraryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        itineraryId:
+          type: integer
+        activityId:
+          type: integer
+        dayNumber:
+          type: integer
+        timeSlot:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - id
+        - itineraryId
+        - activityId
+        - dayNumber
+        - timeSlot
+
+    ItineraryItemWithActivity:
+      type: object
+      properties:
+        id:
+          type: integer
+        itineraryId:
+          type: integer
+        activityId:
+          type: integer
+        dayNumber:
+          type: integer
+        timeSlot:
+          type: string
+        notes:
+          type: ["string", "null"]
+        activity:
+          $ref: "#/components/schemas/Activity"
+      required:
+        - id
+        - itineraryId
+        - activityId
+        - dayNumber
+        - timeSlot
+        - activity
+
+    CreateItineraryBody:
+      type: object
+      properties:
+        title:
+          type: string
+        totalDays:
+          type: integer
+      required:
+        - title
+        - totalDays
+
+    UpdateItineraryBody:
+      type: object
+      properties:
+        title:
+          type: string
+        totalDays:
+          type: integer
+        status:
+          type: string
+
+    AddItineraryItemBody:
+      type: object
+      properties:
+        activityId:
+          type: integer
+        dayNumber:
+          type: integer
+        timeSlot:
+          type: string
+        notes:
+          type: string
+      required:
+        - activityId
+        - dayNumber
+        - timeSlot
+
+    UpdateItineraryItemBody:
+      type: object
+      properties:
+        dayNumber:
+          type: integer
+        timeSlot:
+          type: string
+        notes:
+          type: ["string", "null"]
+
+    ItineraryExport:
+      type: object
+      properties:
+        itinerary:
+          $ref: "#/components/schemas/ItineraryDetail"
+        tierType:
+          type: string
+        exportedAt:
+          type: string
+      required:
+        - itinerary
+        - tierType
+        - exportedAt
+
+    ChatSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        itineraryId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - createdAt
+
+    CreateChatSessionBody:
+      type: object
+      properties:
+        itineraryId:
+          type: integer
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        role:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - sessionId
+        - role
+        - content
+        - createdAt
+
+    SendMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+
+    Purchase:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        itineraryId:
+          type: ["integer", "null"]
+        productType:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - productType
+        - amount
+        - status
+        - createdAt
+
+    CreateCheckoutBody:
+      type: object
+      properties:
+        itineraryId:
+          type: integer
+        productType:
+          type: string
+      required:
+        - itineraryId
+        - productType
+
+    CheckoutResponse:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+
+    AdminCreateActivityBody:
+      type: object
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+        priceLow:
+          type: number
+        priceHigh:
+          type: number
+        location:
+          type: string
+        imageUrl:
+          type: string
+        reviewSummary:
+          type: string
+        whatToBring:
+          type: string
+        whatToExpect:
+          type: string
+        basicBookingGuide:
+          type: string
+        premiumBookingGuide:
+          type: string
+        insiderTips:
+          type: string
+        warnings:
+          type: string
+        bestTimeOfDay:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        providerName:
+          type: string
+        providerWebsite:
+          type: string
+        providerPhone:
+          type: string
+        providerEmail:
+          type: string
+        providerWhatsapp:
+          type: string
+      required:
+        - title
+        - category
+        - difficulty
+        - description
+        - durationMinutes
+        - priceLow
+        - priceHigh
+        - location
+
+    IngestUrlBody:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+
+    ScrapedActivityPreview:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        url:
+          type: string
+        suggestedCategory:
+          type: string
+        rawText:
+          type: string
+      required:
+        - url
+        - rawText
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalItineraries:
+          type: integer
+        totalActivities:
+          type: integer
+        recentItineraries:
+          type: array
+          items:
+            $ref: "#/components/schemas/Itinerary"
+        activitiesByCategory:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategorySummary"
+        hasPremium:
+          type: boolean
+      required:
+        - totalItineraries
+        - totalActivities
+        - recentItineraries
+        - activitiesByCategory
+        - hasPremium

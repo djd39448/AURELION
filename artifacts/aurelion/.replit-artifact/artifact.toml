@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AURELION"
+version = "1.0.0"
+id = "artifacts/aurelion"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25680
+
+[services.development]
+run = "pnpm --filter @workspace/aurelion run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/aurelion", "run", "build" ]
+publicDir = "artifacts/aurelion/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25680"
+BASE_PATH = "/"
