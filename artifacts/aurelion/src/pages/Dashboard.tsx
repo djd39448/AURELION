@@ -26,8 +26,9 @@ export default function Dashboard() {
     }
   }, [user, userLoading, setLocation]);
 
-  const isPremium = purchases?.some(p => p.productType === 'PREMIUM');
-  const isBasic = purchases?.some(p => p.productType === 'BASIC') || isPremium;
+  const userTier = user?.tier ?? "free";
+  const isPremium = userTier === "premium" || user?.role === "admin" || purchases?.some(p => p.productType === 'PREMIUM');
+  const isBasic = isPremium || userTier === "basic" || purchases?.some(p => p.productType === 'BASIC');
 
   const startChat = () => {
     createChat.mutate({ data: {} }, {

@@ -29,7 +29,8 @@ export default function Chat() {
   
   const sendMutation = useSendChatMessage();
 
-  const isPremium = purchases?.some(p => p.productType === 'PREMIUM');
+  const userTier = user?.tier ?? "free";
+  const isPremium = userTier === "premium" || user?.role === "admin" || purchases?.some(p => p.productType === 'PREMIUM');
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -42,7 +43,7 @@ export default function Chat() {
     if (!content.trim()) return;
     
     sendMutation.mutate(
-      [sessionId, { data: { content } }],
+      { sessionId, data: { content } },
       {
         onSuccess: () => {
           setContent("");

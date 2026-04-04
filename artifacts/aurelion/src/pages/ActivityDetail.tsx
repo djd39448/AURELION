@@ -18,8 +18,9 @@ export default function ActivityDetail() {
     query: { enabled: !!user?.isAuthenticated }
   });
 
-  const isPremium = purchases?.some(p => p.productType === 'PREMIUM');
-  const isBasicOrPremium = isPremium || purchases?.some(p => p.productType === 'BASIC');
+  const userTier = user?.tier ?? "free";
+  const isPremium = userTier === "premium" || user?.role === "admin" || purchases?.some(p => p.productType === 'PREMIUM');
+  const isBasicOrPremium = isPremium || userTier === "basic" || purchases?.some(p => p.productType === 'BASIC');
 
   if (isLoading) {
     return (
