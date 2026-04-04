@@ -4,23 +4,30 @@ import { PremiumLock } from "@/components/ui/premium-lock";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, DollarSign, Activity as ActivityIcon, Info, Shield, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getImageUrl } from "@/lib/image-url";
 
 export default function ActivityDetail() {
   const params = useParams();
   const id = parseInt(params.id || "0", 10);
-  
+
   const { data: activity, isLoading } = useGetActivity(id, {
-    query: { enabled: !!id, queryKey: [`/api/activities/${id}`] }
+    query: { enabled: !!id, queryKey: [`/api/activities/${id}`] },
   });
-  
+
   const { data: user } = useGetMe();
   const { data: purchases } = useListPurchases({
-    query: { enabled: !!user?.isAuthenticated }
+    query: { enabled: !!user?.isAuthenticated },
   });
 
   const userTier = user?.tier ?? "free";
-  const isPremium = userTier === "premium" || user?.role === "admin" || purchases?.some(p => p.productType === 'PREMIUM');
-  const isBasicOrPremium = isPremium || userTier === "basic" || purchases?.some(p => p.productType === 'BASIC');
+  const isPremium =
+    userTier === "premium" ||
+    user?.role === "admin" ||
+    purchases?.some((p) => p.productType === "PREMIUM");
+  const isBasicOrPremium =
+    isPremium ||
+    userTier === "basic" ||
+    purchases?.some((p) => p.productType === "BASIC");
 
   if (isLoading) {
     return (
@@ -35,80 +42,118 @@ export default function ActivityDetail() {
     return <div className="p-24 text-center">Activity not found</div>;
   }
 
+  const ctaHref = user?.isAuthenticated ? "/dashboard" : "/auth/login";
+  const ctaLabel = user?.isAuthenticated ? "Go to Dashboard" : "Sign in to Plan";
+
   return (
-    <div className="w-full">
+    <div className="w-full pb-24 lg:pb-0">
       {/* Hero */}
-      <div className="relative h-[60vh] min-h-[500px]">
-        <img 
-          src={activity.imageUrl || "/category-cliff.png"} 
+      <div className="relative h-[50vh] md:h-[60vh] min-h-[360px]">
+        <img
+          src={getImageUrl(activity.imageUrl) || getImageUrl("/category-cliff.png")}
           alt={activity.title}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 right-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-          <span className="text-primary font-serif tracking-widest text-sm uppercase mb-4 block">
+        <div className="absolute bottom-0 left-0 right-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 md:pb-12">
+          <span className="text-primary font-serif tracking-widest text-sm uppercase mb-3 block">
             {activity.category}
           </span>
-          <h1 className="font-serif text-5xl md:text-6xl text-foreground mb-6 max-w-4xl">
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-foreground mb-4 md:mb-6 max-w-4xl leading-tight">
             {activity.title}
           </h1>
-          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground uppercase tracking-widest">
-            <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> {activity.location}</div>
-            <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> {activity.durationMinutes} MIN</div>
-            <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" /> ${activity.priceLow} - ${activity.priceHigh}</div>
-            <div className="flex items-center gap-2"><ActivityIcon className="w-4 h-4 text-primary" /> {activity.difficulty}</div>
+          <div className="flex flex-wrap gap-3 md:gap-6 text-xs md:text-sm text-muted-foreground uppercase tracking-widest">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
+              {activity.location}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
+              {activity.durationMinutes} MIN
+            </div>
+            <div className="flex items-center gap-1.5">
+              <DollarSign className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
+              ${activity.priceLow} – ${activity.priceHigh}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <ActivityIcon className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
+              {activity.difficulty}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-          <div className="lg:col-span-2 space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
+          <div className="lg:col-span-2 space-y-10 md:space-y-12">
             <section>
-              <h2 className="font-serif text-3xl mb-6 text-foreground">The Experience</h2>
+              <h2 className="font-serif text-2xl md:text-3xl mb-4 md:mb-6 text-foreground">
+                The Experience
+              </h2>
               <div className="prose prose-invert max-w-none text-muted-foreground font-light leading-relaxed">
                 <p>{activity.description}</p>
               </div>
             </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               {activity.whatToBring && (
-                <section className="bg-card p-8 border border-border">
+                <section className="bg-card p-6 md:p-8 border border-border">
                   <h3 className="font-serif text-xl mb-4 flex items-center gap-2">
-                    <Check className="text-primary w-5 h-5" /> What to Bring
+                    <Check className="text-primary w-5 h-5 shrink-0" /> What to Bring
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{activity.whatToBring}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {activity.whatToBring}
+                  </p>
                 </section>
               )}
               {activity.whatToExpect && (
-                <section className="bg-card p-8 border border-border">
+                <section className="bg-card p-6 md:p-8 border border-border">
                   <h3 className="font-serif text-xl mb-4 flex items-center gap-2">
-                    <Info className="text-primary w-5 h-5" /> What to Expect
+                    <Info className="text-primary w-5 h-5 shrink-0" /> What to Expect
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{activity.whatToExpect}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {activity.whatToExpect}
+                  </p>
                 </section>
               )}
             </div>
 
             <section>
-              <h2 className="font-serif text-3xl mb-6 text-foreground border-b border-border pb-4">Concierge Intelligence</h2>
-              
+              <h2 className="font-serif text-2xl md:text-3xl mb-6 text-foreground border-b border-border pb-4">
+                Concierge Intelligence
+              </h2>
+
               {isPremium ? (
-                <div className="space-y-6 bg-primary/5 p-8 border border-primary/20 rounded-lg">
+                <div className="space-y-6 bg-primary/5 p-6 md:p-8 border border-primary/20 rounded-lg">
                   <div className="flex items-center gap-3 mb-4">
                     <Shield className="text-primary w-6 h-6" />
                     <h3 className="font-serif text-2xl text-primary">Premium Insider Guide</h3>
                   </div>
                   <div className="prose prose-invert max-w-none text-foreground/90">
-                    <p><strong>Booking Guide:</strong> {activity.basicBookingGuide || "Book 2-3 weeks in advance. Request the morning slot for best conditions."}</p>
-                    <p><strong>Provider:</strong> {activity.providerName || "Local Elite Provider"}</p>
-                    {activity.providerWebsite && <p><strong>Website:</strong> {activity.providerWebsite}</p>}
-                    {activity.providerPhone && <p><strong>Contact:</strong> {activity.providerPhone}</p>}
+                    <p>
+                      <strong>Booking Guide:</strong>{" "}
+                      {activity.basicBookingGuide ||
+                        "Book 2-3 weeks in advance. Request the morning slot for best conditions."}
+                    </p>
+                    <p>
+                      <strong>Provider:</strong>{" "}
+                      {activity.providerName || "Local Elite Provider"}
+                    </p>
+                    {activity.providerWebsite && (
+                      <p>
+                        <strong>Website:</strong> {activity.providerWebsite}
+                      </p>
+                    )}
+                    {activity.providerPhone && (
+                      <p>
+                        <strong>Contact:</strong> {activity.providerPhone}
+                      </p>
+                    )}
                   </div>
                 </div>
               ) : (
-                <PremiumLock 
+                <PremiumLock
                   title="Unlock Insider Intelligence"
                   description="Get exact booking guides, provider direct contacts, and insider tips from our luxury concierge team."
                 />
@@ -116,25 +161,40 @@ export default function ActivityDetail() {
             </section>
           </div>
 
-          <div className="lg:col-span-1">
+          {/* Desktop sidebar — hidden on mobile, use sticky bottom bar instead */}
+          <div className="hidden lg:block lg:col-span-1">
             <div className="sticky top-28 bg-card border border-border p-8 rounded-xl">
               <h3 className="font-serif text-2xl mb-6 text-foreground">Add to Itinerary</h3>
               <p className="text-muted-foreground text-sm mb-8">
                 Plan your perfect trip by adding this experience to your custom itinerary.
               </p>
-              
-              {!user?.isAuthenticated ? (
-                <Button className="w-full bg-primary text-primary-foreground font-serif uppercase tracking-widest h-12" asChild>
-                  <a href="/auth/login">Sign in to Plan</a>
-                </Button>
-              ) : (
-                <Button className="w-full bg-primary text-primary-foreground font-serif uppercase tracking-widest h-12" asChild>
-                  <a href="/dashboard">Go to Dashboard</a>
-                </Button>
-              )}
+              <Button
+                className="w-full bg-primary text-primary-foreground font-serif uppercase tracking-widest h-12"
+                asChild
+              >
+                <a href={ctaHref}>{ctaLabel}</a>
+              </Button>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile sticky bottom bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 flex items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-muted-foreground uppercase tracking-widest font-serif truncate">
+            {activity.title}
+          </p>
+          <p className="text-sm font-serif text-primary">
+            ${activity.priceLow} – ${activity.priceHigh}
+          </p>
+        </div>
+        <Button
+          className="shrink-0 bg-primary text-primary-foreground font-serif uppercase tracking-widest"
+          asChild
+        >
+          <a href={ctaHref}>{ctaLabel}</a>
+        </Button>
       </div>
     </div>
   );
