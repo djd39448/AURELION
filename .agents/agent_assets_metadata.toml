@@ -48,3 +48,81 @@ id = "8arfCOAdLScST3WmJIGye"
 uri = "file://artifacts/aurelion/public/about-hero.png"
 type = "image"
 title = "About us brand hero"
+
+[[generated]]
+id = "c8IOqaaHJpbRem3-12-ib"
+uri = "file://artifacts/aurelion/public/activities/atv-expedition.png"
+type = "image"
+title = "ATV desert expedition"
+
+[[generated]]
+id = "AJyrop3j5FYPI52r1TCn8"
+uri = "file://artifacts/aurelion/public/activities/parasailing.png"
+type = "image"
+title = "Parasailing Caribbean beach"
+
+[[generated]]
+id = "l_VpTzpIe1EetJIOQgePW"
+uri = "file://artifacts/aurelion/public/activities/waterskiing.png"
+type = "image"
+title = "Waterskiing ocean action"
+
+[[generated]]
+id = "QS9RAcCGYmoZiprW52PhL"
+uri = "file://artifacts/aurelion/public/activities/rappelling.png"
+type = "image"
+title = "Cliff rappelling natural pool"
+
+[[generated]]
+id = "Ua7wJSx6myEgLIcPLP__d"
+uri = "file://artifacts/aurelion/public/activities/jeep-safari.png"
+type = "image"
+title = "Jeep safari Aruba desert"
+
+[[generated]]
+id = "DrUL5ai_jem4z25lBubhI"
+uri = "file://artifacts/aurelion/public/activities/horseback-beach.png"
+type = "image"
+title = "Horseback riding sunset beach"
+
+[[generated]]
+id = "IfqnTovqNcWjByG0wv7P1"
+uri = "file://artifacts/aurelion/public/activities/snorkeling-turtle.png"
+type = "image"
+title = "Snorkeling sea turtle Caribbean"
+
+[[generated]]
+id = "GEW2xOIgYaTS2lK3PsD9m"
+uri = "file://artifacts/aurelion/public/activities/kayaking-beach.png"
+type = "image"
+title = "Kayaking tropical Caribbean"
+
+[[generated]]
+id = "d0bmooInzG0Dc8xldSggH"
+uri = "file://artifacts/aurelion/public/activities/kitesurfing.png"
+type = "image"
+title = "Kitesurfing Caribbean waters"
+
+[[generated]]
+id = "0UXI-ya27bZCLqWRlvMAC"
+uri = "file://artifacts/aurelion/public/activities/cave-expedition.png"
+type = "image"
+title = "Cave expedition stalactites"
+
+[[generated]]
+id = "8eA_I97L520PKcvC7kpIG"
+uri = "file://artifacts/aurelion/public/activities/paddleboarding.png"
+type = "image"
+title = "Paddleboarding tropical lagoon"
+
+[[generated]]
+id = "IK_tUMJpwZt_fiHMX7rYN"
+uri = "file://artifacts/aurelion/public/activities/mangrove-kayaking.png"
+type = "image"
+title = "Mangrove kayaking eco tour"
+
+[[generated]]
+id = "0RkmwtG5ta8f-95L7Yh66"
+uri = "file://artifacts/aurelion/public/activities/hiking-trail.png"
+type = "image"
+title = "Desert hiking Aruba trail"
