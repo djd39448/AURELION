@@ -8,6 +8,7 @@ import {
   useGetMe,
   exportItinerary,
 } from "@workspace/api-client-react";
+import { printItineraryPDF } from "@/lib/pdf-export";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -71,14 +72,8 @@ export default function ItineraryDetail() {
     setExporting(true);
     try {
       const data = await exportItinerary(id);
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${itinerary?.title ?? "itinerary"}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast({ title: "Itinerary exported" });
+      printItineraryPDF(data as any);
+      toast({ title: "PDF opened — choose 'Save as PDF' in the print dialog" });
     } catch {
       toast({ title: "Export failed", variant: "destructive" });
     } finally {
@@ -128,7 +123,7 @@ export default function ItineraryDetail() {
               disabled={exporting}
             >
               <Download className="w-4 h-4 mr-2" />
-              {exporting ? "Exporting..." : "Export Itinerary"}
+              {exporting ? "Preparing PDF..." : "Export PDF"}
             </Button>
           ) : (
             <PremiumLock
