@@ -1,7 +1,13 @@
-import { db, purchasesTable, itinerariesTable } from "@workspace/db";
+import { db, purchasesTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
 export async function getUserTier(userId: number, itineraryId?: number): Promise<"FREE" | "BASIC" | "PREMIUM"> {
+  const [user] = await db.select({ role: usersTable.role, tier: usersTable.tier })
+    .from(usersTable).where(eq(usersTable.id, userId));
+
+  if (user?.role === "admin" || user?.tier === "premium") return "PREMIUM";
+  if (user?.tier === "basic") return "BASIC";
+
   const purchases = await db.select().from(purchasesTable)
     .where(and(
       eq(purchasesTable.userId, userId),
@@ -33,10 +39,6 @@ export async function canViewPremiumContent(userId: number, itineraryId?: number
 }
 
 export async function hasPremiumPurchase(userId: number): Promise<boolean> {
-  const purchases = await db.select().from(purchasesTable)
-    .where(and(
-      eq(purchasesTable.userId, userId),
-      eq(purchasesTable.status, "completed")
-    ));
-  return purchases.some(p => p.productType === "PREMIUM");
+  const tier = await getUserTier(userId);
+  return tier === "PREMIUM";
 }

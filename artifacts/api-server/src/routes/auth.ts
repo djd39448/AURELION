@@ -19,6 +19,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
       name: usersTable.name,
       email: usersTable.email,
       role: usersTable.role,
+      tier: usersTable.tier,
     }).from(usersTable).where(eq(usersTable.id, userId));
 
     if (!user) {
@@ -26,7 +27,8 @@ router.get("/auth/me", async (req, res): Promise<void> => {
       res.json({ isAuthenticated: false });
       return;
     }
-    res.json({ ...user, isAuthenticated: true });
+    const effectiveTier = user.role === "admin" ? "premium" : user.tier;
+    res.json({ ...user, tier: effectiveTier, isAuthenticated: true });
   } catch (err) {
     req.log.error({ err }, "Error fetching user");
     res.status(500).json({ error: "Internal server error" });
@@ -85,7 +87,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       res.status(401).json({ error: "Invalid credentials" });
       return;
     }
-    const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+    const effectiveTier = user.role === "admin" ? "premium" : (user.tier ?? "free");
+    const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role, tier: effectiveTier };
     (req.session as Record<string, unknown>).userId = user.id;
     (req.session as Record<string, unknown>).user = sessionUser;
     res.json({ ...sessionUser, isAuthenticated: true });
