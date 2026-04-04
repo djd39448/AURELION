@@ -35,8 +35,8 @@ export default function Register() {
     registerMutation.mutate(
       { data },
       {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        onSuccess: (userData) => {
+          queryClient.setQueryData(["/api/auth/me"], { ...userData, isAuthenticated: true });
           toast({ title: "Account created", description: "Welcome to Aurelion." });
           setLocation("/dashboard");
         },

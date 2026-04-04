@@ -33,8 +33,8 @@ export default function Login() {
     loginMutation.mutate(
       { data },
       {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        onSuccess: (userData) => {
+          queryClient.setQueryData(["/api/auth/me"], { ...userData, isAuthenticated: true });
           toast({ title: "Welcome back", description: "Successfully signed in." });
           setLocation("/dashboard");
         },
