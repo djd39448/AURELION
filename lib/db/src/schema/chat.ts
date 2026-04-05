@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -51,6 +51,19 @@ export const chatSessionsTable = pgTable("chat_sessions", {
    * Defaults to `now()` at insert time. Used for ordering in the session list.
    */
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+
+  /**
+   * @param compressedHistory — AI-generated summary of archived conversation turns.
+   * Old turns (all except last 5) are compressed into this summary to keep
+   * the context window small while preserving conversational continuity.
+   */
+  compressedHistory: text("compressed_history"),
+
+  /** @param lastCompressedAt — When compression was last run on this session. */
+  lastCompressedAt: timestamp("last_compressed_at", { withTimezone: true }),
+
+  /** @param compressionCount — How many times this session has been compressed. */
+  compressionCount: integer("compression_count").notNull().default(0),
 });
 
 /**
@@ -101,6 +114,19 @@ export const chatMessagesTable = pgTable("chat_messages", {
    * markdown formatting (rendered in the chat UI).
    */
   content: text("content").notNull(),
+
+  /**
+   * @param isArchived — TRUE when this message has been compressed into the
+   * session's `compressedHistory` summary. Archived messages are excluded
+   * from the active context window sent to OpenAI.
+   */
+  isArchived: boolean("is_archived").notNull().default(false),
+
+  /**
+   * @param tokenCount — Approximate token count for this message.
+   * Used to decide when compression is needed (e.g., total > 4000 tokens).
+   */
+  tokenCount: integer("token_count"),
 
   /**
    * @param createdAt — Timestamp (with timezone) of when this message was sent.

@@ -49,3 +49,4 @@ export * from "./activities";
 export * from "./itineraries";
 export * from "./purchases";
 export * from "./chat";
+export * from "./user-memories";

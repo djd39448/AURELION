@@ -68,6 +68,16 @@ export const usersTable = pgTable("users", {
   tier: text("tier").notNull().default("free"),
 
   /**
+   * @param aiUserIndex — Cached user-index.md content for the AI concierge.
+   * Contains quick facts, memory count, and last session summary.
+   * Regenerated when important memories (preference/detail/concern) are saved.
+   */
+  aiUserIndex: text("ai_user_index"),
+
+  /** @param aiIndexUpdatedAt — When the AI user index was last regenerated. */
+  aiIndexUpdatedAt: timestamp("ai_index_updated_at", { withTimezone: true }),
+
+  /**
    * @param createdAt — Timestamp (with timezone) of account creation.
    * Defaults to `now()` at insert time. Used for analytics and account-age displays.
    */

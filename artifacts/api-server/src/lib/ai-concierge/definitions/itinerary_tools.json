@@ -1,0 +1,57 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "list_user_itineraries",
+      "description": "Gets all itineraries for the current user",
+      "parameters": { "type": "object", "properties": {}, "required": [] }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "create_itinerary",
+      "description": "Creates a new itinerary for the user",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "description": "Itinerary name" },
+          "total_days": { "type": "integer", "description": "Number of days (1-14)" }
+        },
+        "required": ["title", "total_days"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "add_to_itinerary",
+      "description": "Adds an activity to a specific day and time slot",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "itinerary_id": { "type": "integer" },
+          "activity_id": { "type": "integer" },
+          "day": { "type": "integer", "description": "Day number (1-indexed)" },
+          "time_slot": { "type": "string", "enum": ["morning", "afternoon", "evening"] }
+        },
+        "required": ["itinerary_id", "activity_id", "day", "time_slot"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "remove_from_itinerary",
+      "description": "Removes an activity from an itinerary",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "itinerary_id": { "type": "integer" },
+          "item_id": { "type": "integer", "description": "Itinerary item ID" }
+        },
+        "required": ["itinerary_id", "item_id"]
+      }
+    }
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "compare_activities",
+      "description": "Compares two or more activities side-by-side",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "activity_ids": { "type": "array", "items": { "type": "integer" }, "description": "2-4 activity IDs to compare" }
+        },
+        "required": ["activity_ids"]
+      }
+    }
+  }
+]

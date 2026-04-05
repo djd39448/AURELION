@@ -1,0 +1,16 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "update_user_preferences",
+      "description": "Updates user's stored preferences",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "interests": { "type": "array", "items": { "type": "string" } },
+          "budget_max": { "type": "integer" }
+        }
+      }
+    }
+  }
+]
