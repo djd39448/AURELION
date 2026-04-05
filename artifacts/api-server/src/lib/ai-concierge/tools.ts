@@ -15,7 +15,7 @@
 
 import { readFileSync } from "fs";
 import { join } from "path";
-import { db, activitiesTable, providersTable, userMemoriesTable, usersTable } from "@workspace/db";
+import { db, activitiesTable, providersTable, userMemoriesTable, usersTable, itinerariesTable, itineraryItemsTable } from "@workspace/db";
 import { eq, and, lte, gte, or, ilike, desc, sql } from "drizzle-orm";
 import OpenAI from "openai";
 import { logger } from "../logger.js";
@@ -352,6 +352,143 @@ export function getSkill(skillName: string) {
   }
 }
 
+// ─── Itinerary Tools (directly callable) ────────────────────────────────────
+
+export async function listUserItineraries(userId: number) {
+  const results = await db
+    .select({
+      id: itinerariesTable.id,
+      title: itinerariesTable.title,
+      totalDays: itinerariesTable.totalDays,
+      status: itinerariesTable.status,
+    })
+    .from(itinerariesTable)
+    .where(eq(itinerariesTable.userId, userId))
+    .orderBy(desc(itinerariesTable.createdAt));
+
+  return { count: results.length, itineraries: results };
+}
+
+export async function addToItinerary(
+  userId: number,
+  params: { itinerary_id: number; activity_id: number; day: number; time_slot: string }
+) {
+  // Verify ownership
+  const [itinerary] = await db
+    .select({ id: itinerariesTable.id, userId: itinerariesTable.userId, totalDays: itinerariesTable.totalDays })
+    .from(itinerariesTable)
+    .where(eq(itinerariesTable.id, params.itinerary_id));
+
+  if (!itinerary || itinerary.userId !== userId) {
+    return { error: "Itinerary not found or access denied" };
+  }
+  if (params.day < 1 || params.day > itinerary.totalDays) {
+    return { error: `Invalid day. This itinerary has ${itinerary.totalDays} days.` };
+  }
+
+  // Check slot
+  const [existing] = await db
+    .select({ id: itineraryItemsTable.id })
+    .from(itineraryItemsTable)
+    .where(
+      and(
+        eq(itineraryItemsTable.itineraryId, params.itinerary_id),
+        eq(itineraryItemsTable.dayNumber, params.day),
+        eq(itineraryItemsTable.timeSlot, params.time_slot)
+      )
+    );
+
+  if (existing) {
+    return { error: `${params.time_slot} slot on day ${params.day} is already occupied. Choose a different slot or remove the existing activity.` };
+  }
+
+  const [item] = await db
+    .insert(itineraryItemsTable)
+    .values({
+      itineraryId: params.itinerary_id,
+      activityId: params.activity_id,
+      dayNumber: params.day,
+      timeSlot: params.time_slot,
+    })
+    .returning();
+
+  // Get activity title for confirmation
+  const [activity] = await db
+    .select({ title: activitiesTable.title })
+    .from(activitiesTable)
+    .where(eq(activitiesTable.id, params.activity_id));
+
+  return {
+    success: true,
+    message: `Added "${activity?.title ?? "activity"}" to Day ${params.day} ${params.time_slot}`,
+    item_id: item.id,
+  };
+}
+
+export async function removeFromItinerary(
+  userId: number,
+  params: { itinerary_id: number; item_id: number }
+) {
+  const [itinerary] = await db
+    .select({ userId: itinerariesTable.userId })
+    .from(itinerariesTable)
+    .where(eq(itinerariesTable.id, params.itinerary_id));
+
+  if (!itinerary || itinerary.userId !== userId) {
+    return { error: "Itinerary not found or access denied" };
+  }
+
+  await db
+    .delete(itineraryItemsTable)
+    .where(
+      and(
+        eq(itineraryItemsTable.id, params.item_id),
+        eq(itineraryItemsTable.itineraryId, params.itinerary_id)
+      )
+    );
+
+  return { success: true, message: "Activity removed from itinerary" };
+}
+
+export async function getItineraryDetails(userId: number, itineraryId: number) {
+  const [itinerary] = await db
+    .select()
+    .from(itinerariesTable)
+    .where(eq(itinerariesTable.id, itineraryId));
+
+  if (!itinerary || itinerary.userId !== userId) {
+    return { error: "Itinerary not found or access denied" };
+  }
+
+  const items = await db
+    .select({
+      item_id: itineraryItemsTable.id,
+      day: itineraryItemsTable.dayNumber,
+      time_slot: itineraryItemsTable.timeSlot,
+      activity_title: activitiesTable.title,
+      activity_id: activitiesTable.id,
+      price: activitiesTable.priceLow,
+    })
+    .from(itineraryItemsTable)
+    .innerJoin(activitiesTable, eq(itineraryItemsTable.activityId, activitiesTable.id))
+    .where(eq(itineraryItemsTable.itineraryId, itineraryId));
+
+  return {
+    id: itinerary.id,
+    title: itinerary.title,
+    total_days: itinerary.totalDays,
+    status: itinerary.status,
+    items: items.map((i) => ({
+      item_id: i.item_id,
+      day: i.day,
+      time_slot: i.time_slot,
+      activity_id: i.activity_id,
+      activity: i.activity_title,
+      price: `$${i.price}`,
+    })),
+  };
+}
+
 // ─── OpenAI Function Definitions for Meta-Tools ─────────────────────────────
 
 /**
@@ -434,31 +571,58 @@ export function getMetaToolDefinitions(): OpenAI.ChatCompletionTool[] {
         },
       },
     },
+    // ─── Itinerary Tools (directly callable) ─────────────
     {
       type: "function",
       function: {
-        name: "get_tool_definition",
-        description: "Load full tool schemas for a category (itinerary_tools, activity_tools, user_tools). Use when you need to perform actions like creating itineraries or adding activities.",
+        name: "list_user_itineraries",
+        description: "List all of this user's itineraries with their IDs, titles, and day counts.",
+        parameters: { type: "object", properties: {} },
+      },
+    },
+    {
+      type: "function",
+      function: {
+        name: "get_itinerary_details",
+        description: "Get full itinerary details including all scheduled activities per day/time slot.",
         parameters: {
           type: "object",
           properties: {
-            category: { type: "string", enum: ["itinerary_tools", "activity_tools", "user_tools"] },
+            itinerary_id: { type: "number", description: "Itinerary ID" },
           },
-          required: ["category"],
+          required: ["itinerary_id"],
         },
       },
     },
     {
       type: "function",
       function: {
-        name: "get_skill",
-        description: "Load detailed step-by-step workflow instructions for common interactions.",
+        name: "add_to_itinerary",
+        description: "Add an activity to a specific day and time slot in the user's itinerary.",
         parameters: {
           type: "object",
           properties: {
-            skill_name: { type: "string", enum: ["itinerary_creation", "activity_recommendation", "booking_assistance", "itinerary_modification", "preference_learning"] },
+            itinerary_id: { type: "number", description: "Itinerary ID" },
+            activity_id: { type: "number", description: "Activity ID from search results" },
+            day: { type: "number", description: "Day number (1-indexed)" },
+            time_slot: { type: "string", enum: ["morning", "afternoon", "evening"], description: "Time slot" },
           },
-          required: ["skill_name"],
+          required: ["itinerary_id", "activity_id", "day", "time_slot"],
+        },
+      },
+    },
+    {
+      type: "function",
+      function: {
+        name: "remove_from_itinerary",
+        description: "Remove an activity from the user's itinerary by item ID.",
+        parameters: {
+          type: "object",
+          properties: {
+            itinerary_id: { type: "number", description: "Itinerary ID" },
+            item_id: { type: "number", description: "Itinerary item ID (from get_itinerary_details)" },
+          },
+          required: ["itinerary_id", "item_id"],
         },
       },
     },
@@ -492,11 +656,17 @@ export async function executeTool(
     case "save_user_memory":
       return saveUserMemory(userId, args as unknown as SaveMemoryData);
 
-    case "get_tool_definition":
-      return getToolDefinition(args.category as string);
+    case "list_user_itineraries":
+      return listUserItineraries(userId);
 
-    case "get_skill":
-      return getSkill(args.skill_name as string);
+    case "get_itinerary_details":
+      return getItineraryDetails(userId, args.itinerary_id as number);
+
+    case "add_to_itinerary":
+      return addToItinerary(userId, args as { itinerary_id: number; activity_id: number; day: number; time_slot: string });
+
+    case "remove_from_itinerary":
+      return removeFromItinerary(userId, args as { itinerary_id: number; item_id: number });
 
     default:
       return { error: `Unknown tool: ${toolName}` };
