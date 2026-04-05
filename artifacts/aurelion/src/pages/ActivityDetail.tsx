@@ -1,29 +1,65 @@
+/**
+ * @module pages/ActivityDetail
+ * @description Single activity detail page. Shows a full-bleed hero image,
+ * metadata (location, duration, price, difficulty), a description section,
+ * optional "What to Bring" / "What to Expect" cards, and a tier-gated
+ * "Concierge Intelligence" section with booking guides and provider contacts.
+ *
+ * Business logic:
+ *  - The "Concierge Intelligence" section is only visible to Premium-tier users
+ *    (or admins). Free/Basic users see a PremiumLock upgrade prompt.
+ *  - The sidebar CTA adapts: authenticated users get "Go to Dashboard",
+ *    guests get "Sign in to Plan".
+ *  - A mobile sticky bottom bar mirrors the desktop sidebar CTA.
+ *
+ * @route /activities/:id
+ * @auth None required (public page)
+ * @tier Premium required for Concierge Intelligence section
+ */
+
 import { useParams } from "wouter";
 import { useGetActivity, useGetMe, useListPurchases } from "@workspace/api-client-react";
-import { PremiumLock } from "@/components/ui/premium-lock";
+import { PremiumLockEnhanced } from "@/components/ui/premium-lock-enhanced";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, DollarSign, Activity as ActivityIcon, Info, Shield, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getImageUrl } from "@/lib/image-url";
 
+/**
+ * ActivityDetail page component.
+ *
+ * @route /activities/:id
+ * @auth None
+ * @tier Premium (for Concierge Intelligence); all other content is public
+ */
 export default function ActivityDetail() {
+  /** Extract the activity ID from the URL param and parse to integer. */
   const params = useParams();
   const id = parseInt(params.id || "0", 10);
 
+  /** Query: fetch the single activity by ID. Disabled when id is falsy. */
   const { data: activity, isLoading } = useGetActivity(id, {
     query: { enabled: !!id, queryKey: [`/api/activities/${id}`] },
   });
 
+  /** Query: current authenticated user (returns isAuthenticated: false for guests). */
   const { data: user } = useGetMe();
+  /** Query: user's purchase history — used to determine effective tier. Only runs if authenticated. */
   const { data: purchases } = useListPurchases({
     query: { enabled: !!user?.isAuthenticated },
   });
 
+  // -- Tier determination logic --
+  // The effective tier is derived from the user's profile tier, their role,
+  // AND their purchase history (a purchase of PREMIUM overrides the profile tier).
   const userTier = user?.tier ?? "free";
+  /** True if user has Premium access (profile tier, admin role, or PREMIUM purchase). */
   const isPremium =
     userTier === "premium" ||
     user?.role === "admin" ||
     purchases?.some((p) => p.productType === "PREMIUM");
+  /** True if user has at least Basic access (includes Premium). */
   const isBasicOrPremium =
     isPremium ||
     userTier === "basic" ||
@@ -42,6 +78,8 @@ export default function ActivityDetail() {
     return <div className="p-24 text-center">Activity not found</div>;
   }
 
+  // -- Dynamic CTA based on auth state --
+  // Authenticated users are directed to their dashboard; guests to the login page.
   const ctaHref = user?.isAuthenticated ? "/dashboard" : "/auth/login";
   const ctaLabel = user?.isAuthenticated ? "Go to Dashboard" : "Sign in to Plan";
 
@@ -72,8 +110,13 @@ export default function ActivityDetail() {
               {activity.durationMinutes} MIN
             </div>
             <div className="flex items-center gap-1.5">
+              {/* UX FIX #8: Price hierarchy — emphasise starting price, show range only when it differs */}
               <DollarSign className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-              ${activity.priceLow} – ${activity.priceHigh}
+              <span className="font-serif">${activity.priceLow}</span>
+              {activity.priceHigh > activity.priceLow && (
+                <span className="text-muted-foreground">– ${activity.priceHigh}</span>
+              )}
+              <span className="text-muted-foreground text-xs ml-1">/ person</span>
             </div>
             <div className="flex items-center gap-1.5">
               <ActivityIcon className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
@@ -85,6 +128,15 @@ export default function ActivityDetail() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+        {/* UX FIX #7: Breadcrumbs — helps users orient in deep pages and navigate
+            back without relying on browser history. Category link pre-filters the
+            directory, encouraging further browsing within the same category. */}
+        <Breadcrumbs items={[
+          { label: "Activities", href: "/activities" },
+          { label: activity.category, href: `/activities?category=${encodeURIComponent(activity.category)}` },
+          { label: activity.title },
+        ]} />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-16">
           <div className="lg:col-span-2 space-y-10 md:space-y-12">
             <section>
@@ -153,9 +205,16 @@ export default function ActivityDetail() {
                   </div>
                 </div>
               ) : (
-                <PremiumLock
+                <PremiumLockEnhanced
                   title="Unlock Insider Intelligence"
                   description="Get exact booking guides, provider direct contacts, and insider tips from our luxury concierge team."
+                  preview={activity.basicBookingGuide?.slice(0, 100) + "..."}
+                  features={[
+                    "Complete booking guide with best times",
+                    "Direct provider contact information",
+                    "Insider tips from local experts",
+                    "Access to AI Concierge chat",
+                  ]}
                 />
               )}
             </section>
@@ -179,8 +238,8 @@ export default function ActivityDetail() {
         </div>
       </div>
 
-      {/* Mobile sticky bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 flex items-center gap-4">
+      {/* Mobile sticky bottom bar — pb uses safe-area-inset for devices with notch/home indicator */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-background/95 backdrop-blur-md border-t border-border px-4 pt-3 flex items-center gap-4" style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
         <div className="flex-1 min-w-0">
           <p className="text-xs text-muted-foreground uppercase tracking-widest font-serif truncate">
             {activity.title}

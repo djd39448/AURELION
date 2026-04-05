@@ -1,3 +1,25 @@
+/**
+ * @module pages/ItineraryDetail
+ * @description Itinerary builder page. Displays a multi-day itinerary with
+ * morning/afternoon/evening time slots, allowing users to add and remove
+ * activities from each slot.
+ *
+ * Layout:
+ *  - Desktop: sidebar with day selector + export panel; main area with day content.
+ *  - Mobile: horizontal pill-style day selector, collapsible export button, then day content.
+ *
+ * Features:
+ *  - Add activities via a searchable dialog modal.
+ *  - Remove activities with a trash button per item.
+ *  - Export to PDF (requires Basic or Premium tier; free users see a PremiumLock / upgrade CTA).
+ *  - PDF export works by fetching the full itinerary payload from the API,
+ *    then rendering it in a new browser window via `printItineraryPDF`.
+ *
+ * @route /itineraries/:id
+ * @auth Required (implicitly — API requires auth)
+ * @tier Basic+ required for PDF export; all tiers can build itineraries
+ */
+
 import { useState } from "react";
 import { useParams, Link } from "wouter";
 import {
@@ -16,31 +38,60 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Clock, Download, MapPin, Plus, Trash2 } from "lucide-react";
 import { PremiumLock } from "@/components/ui/premium-lock";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { getImageUrl } from "@/lib/image-url";
 
+/**
+ * ItineraryDetail page component (itinerary builder).
+ *
+ * @route /itineraries/:id
+ * @auth Required
+ * @tier Basic+ for PDF export
+ */
 export default function ItineraryDetail() {
+  /** Extract itinerary ID from URL params. */
   const params = useParams();
   const id = parseInt(params.id || "0", 10);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // -- Local UI state --
+  /** Which day tab is currently selected (1-based). */
   const [activeDay, setActiveDay] = useState(1);
+  /** Whether the "Add Activity" dialog is open. */
   const [isAddingActivity, setIsAddingActivity] = useState(false);
+  /** Search text within the "Add Activity" dialog. */
   const [search, setSearch] = useState("");
+  /** True while the PDF export is being prepared. */
   const [exporting, setExporting] = useState(false);
 
+  // -- Queries --
+  /** Query: current user profile (for tier checks). */
   const { data: user } = useGetMe();
+  /** Query: the itinerary with its items. Disabled until `id` is valid. */
   const { data: itinerary, isLoading } = useGetItinerary(id, {
     query: { enabled: !!id, queryKey: [`/api/itineraries/${id}`] },
   });
+  /** Query: activity list filtered by search — used inside the "Add Activity" dialog. */
   const { data: activities } = useListActivities({ search: search || undefined });
 
+  // -- Mutations --
+  /** Mutation: add an activity to a specific day + time slot of this itinerary. */
   const addMutation = useAddItineraryItem();
+  /** Mutation: remove an activity item from this itinerary. */
   const removeMutation = useRemoveItineraryItem();
 
+  // -- Tier-based feature flags --
   const userTier = user?.tier ?? "free";
+  /** True if user can export PDF (Basic, Premium, or admin). */
   const canExport = userTier === "basic" || userTier === "premium" || user?.role === "admin";
+  /** True if user has Premium access. */
   const isPremium = userTier === "premium" || user?.role === "admin";
 
+  /**
+   * Add an activity to the current day at the given time slot.
+   * Invalidates the itinerary cache on success so the UI refreshes.
+   */
   const handleAddActivity = (activityId: number, timeSlot: string) => {
     addMutation.mutate(
       { id, data: { activityId, dayNumber: activeDay, timeSlot } },
@@ -55,6 +106,10 @@ export default function ItineraryDetail() {
     );
   };
 
+  /**
+   * Remove an activity item from this itinerary.
+   * Invalidates the itinerary cache on success so the UI refreshes.
+   */
   const handleRemoveActivity = (itemId: number) => {
     removeMutation.mutate(
       { id, itemId },
@@ -68,6 +123,12 @@ export default function ItineraryDetail() {
     );
   };
 
+  /**
+   * Export the itinerary to PDF.
+   * Fetches the full itinerary export payload from the API, then opens a
+   * styled HTML document in a new browser window that auto-triggers the
+   * browser print dialog (user selects "Save as PDF").
+   */
   const handleExport = async () => {
     if (!canExport) return;
     setExporting(true);
@@ -93,6 +154,12 @@ export default function ItineraryDetail() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      <Breadcrumbs items={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Itineraries", href: "/dashboard" },
+        { label: itinerary.title },
+      ]} />
+
       {/* Mobile header */}
       <div className="mb-6 md:hidden">
         <h2 className="font-serif text-2xl text-foreground mb-1">{itinerary.title}</h2>

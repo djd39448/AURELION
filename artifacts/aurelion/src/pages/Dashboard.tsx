@@ -1,3 +1,23 @@
+/**
+ * @module pages/Dashboard
+ * @description Authenticated user dashboard. Displays a personalised welcome
+ * header, summary stats (total itineraries, planned activities, membership tier),
+ * and a list of the user's itineraries.
+ *
+ * Features:
+ *  - Auth guard: redirects unauthenticated users to /auth/login via useEffect.
+ *  - "New Itinerary" CTA always visible.
+ *  - "AI Concierge" button visible only to Premium-tier users; otherwise shows "Upgrade".
+ *  - Stats cards sourced from the dashboard summary API endpoint.
+ *  - Itinerary list with click-through to /itineraries/:id.
+ *  - Empty state with "Plan a Trip" CTA when no itineraries exist.
+ *  - Skeleton loading state while data is being fetched.
+ *
+ * @route /dashboard
+ * @auth Required (redirects to /auth/login if unauthenticated)
+ * @tier None required (Premium unlocks AI Concierge button)
+ */
+
 import { useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import {
@@ -10,44 +30,81 @@ import {
 import { Button } from "@/components/ui/button";
 import { Compass, Map, Plus, Shield, MessageSquare, Star } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
+/**
+ * Dashboard page component.
+ *
+ * @route /dashboard
+ * @auth Required
+ * @tier None (Premium enables AI Concierge button)
+ */
 export default function Dashboard() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  /** Query: current user profile (auth state + tier + role). */
   const { data: user, isLoading: userLoading } = useGetMe();
+  /** Query: aggregated dashboard stats (total itineraries, total activities). Only fetched when authenticated. */
   const { data: summary, isLoading: summaryLoading } = useGetDashboardSummary({
     query: { enabled: !!user?.isAuthenticated },
   });
+  /** Query: user's itinerary list. Only fetched when authenticated. */
   const { data: itineraries, isLoading: itinerariesLoading } = useListItineraries({
     query: { enabled: !!user?.isAuthenticated },
   });
+  /** Query: purchase history — used to determine effective tier. */
   const { data: purchases } = useListPurchases({
     query: { enabled: !!user?.isAuthenticated },
   });
 
+  /** Mutation: create a new AI chat session and navigate to /chat/:sessionId on success. */
   const createChat = useCreateChatSession();
 
+  /**
+   * Auth guard side-effect.
+   * Once the user query resolves, if the user is not authenticated,
+   * redirect to the login page. This runs on mount and whenever auth state changes.
+   */
   useEffect(() => {
     if (!userLoading && !user?.isAuthenticated) {
       setLocation("/auth/login");
     }
   }, [user, userLoading, setLocation]);
 
+  // -- Tier determination (mirrors logic in ActivityDetail) --
   const userTier = user?.tier ?? "free";
+  /** True if user has Premium access (profile tier, admin role, or PREMIUM purchase). */
   const isPremium =
     userTier === "premium" ||
     user?.role === "admin" ||
     purchases?.some((p) => p.productType === "PREMIUM");
+  /** True if user has at least Basic access (includes Premium). */
   const isBasic =
     isPremium ||
     userTier === "basic" ||
     purchases?.some((p) => p.productType === "BASIC");
 
+  /**
+   * Start a new AI Concierge chat session.
+   * Creates a session via the API, then navigates to the chat page.
+   */
   const startChat = () => {
     createChat.mutate(
       { data: {} },
       {
         onSuccess: (session) => {
+          toast({
+            title: "AI Concierge ready",
+            description: "Starting your concierge session...",
+          });
           setLocation(`/chat/${session.id}`);
+        },
+        onError: () => {
+          toast({
+            title: "Error",
+            description: "Could not start chat. Please try again.",
+            variant: "destructive",
+          });
         },
       }
     );
@@ -165,25 +222,39 @@ export default function Dashboard() {
           Your Itineraries
         </h2>
 
+        {/* UX FIX #4: Enhanced empty state — gradient bg, larger icon, motivating copy,
+            and social proof line reduce blank-page anxiety and encourage first action. */}
         {itineraries?.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-10 md:p-12 text-center flex flex-col items-center">
-            <Map className="w-10 h-10 md:w-12 md:h-12 text-muted-foreground/30 mb-4" />
-            <h3 className="font-serif text-xl mb-2">No itineraries yet</h3>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Start planning your perfect Aruba adventure by creating your first itinerary.
-            </p>
-            <Button
-              asChild
-              className="bg-primary text-primary-foreground font-serif uppercase tracking-widest"
-            >
-              <Link href="/itineraries/new">Plan a Trip</Link>
-            </Button>
+          <div className="bg-card border border-border rounded-xl p-10 md:p-12 text-center flex flex-col items-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
+            <div className="relative">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <Map className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="font-serif text-2xl md:text-3xl mb-3 text-foreground">
+                Your Next Adventure Awaits
+              </h3>
+              <p className="text-muted-foreground mb-2 text-lg">
+                Aruba's most exclusive experiences,
+              </p>
+              <p className="text-muted-foreground mb-8 text-lg">
+                curated just for you.
+              </p>
+              <Button asChild size="lg" className="bg-primary text-primary-foreground font-serif uppercase tracking-widest h-14 px-8">
+                <Link href="/itineraries/new">Start Planning</Link>
+              </Button>
+              <p className="text-xs text-muted-foreground/60 mt-8">
+                Join 200+ travelers who've crafted their perfect Aruba trip with Aurelion
+              </p>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {itineraries?.map((itinerary) => (
               <Link key={itinerary.id} href={`/itineraries/${itinerary.id}`} className="group block">
-                <div className="bg-card border border-border rounded-xl p-5 md:p-6 hover:border-primary/50 transition-colors h-full flex flex-col">
+                {/* UX FIX #5: Micro-interaction — subtle lift + shadow on hover signals interactivity.
+                    200ms duration keeps it snappy without jarring. */}
+                <div className="bg-card border border-border rounded-xl p-5 md:p-6 hover:border-primary/50 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 h-full flex flex-col">
                   <h3 className="font-serif text-lg md:text-xl text-foreground mb-2 group-hover:text-primary transition-colors">
                     {itinerary.title}
                   </h3>

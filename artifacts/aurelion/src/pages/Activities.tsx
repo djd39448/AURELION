@@ -1,3 +1,22 @@
+/**
+ * @module pages/Activities
+ * @description Activity directory page with search and filter capabilities.
+ * Displays all curated Aruba activities in a responsive grid with a sidebar
+ * filter panel (desktop) / collapsible filter panel (mobile).
+ *
+ * Features:
+ *  - Text search across activity titles/descriptions.
+ *  - Category dropdown (populated from server categories).
+ *  - Difficulty dropdown (Easy / Moderate / Challenging / Expert).
+ *  - "Advanced Filters" teaser behind a PremiumLock component.
+ *  - Skeleton loading state while data is in-flight.
+ *  - Empty-state with "Clear all filters" CTA when no results match.
+ *
+ * @route /activities
+ * @auth None required (fully public)
+ * @tier None required (advanced filters are premium-gated via PremiumLock UI hint)
+ */
+
 import { useState } from "react";
 import { Link } from "wouter";
 import { useListActivities, useGetCategories } from "@workspace/api-client-react";
@@ -9,27 +28,45 @@ import { Search, MapPin, Clock, DollarSign, SlidersHorizontal, X } from "lucide-
 import { PremiumLock } from "@/components/ui/premium-lock";
 import { getImageUrl } from "@/lib/image-url";
 
+/**
+ * Activities directory page component.
+ *
+ * @route /activities
+ * @auth None
+ * @tier None (advanced filters are visually gated)
+ */
 export default function Activities() {
+  // -- Filter state: controlled inputs for search, category, and difficulty --
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [difficulty, setDifficulty] = useState<string>("all");
+  /** Toggle for mobile filter panel visibility */
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  /**
+   * Query: fetch activities filtered by the current search/category/difficulty.
+   * The query re-runs automatically when any filter value changes (reactive query key).
+   * Passing `undefined` omits the parameter from the API request.
+   */
   const { data: activities, isLoading } = useListActivities({
     search: search || undefined,
     category: category !== "all" ? category : undefined,
     difficulty: difficulty !== "all" ? difficulty : undefined,
   });
 
+  /** Query: fetch distinct categories for the category dropdown. */
   const { data: categories } = useGetCategories();
 
+  /** Derived boolean — true when any filter deviates from its default "all" state. */
   const hasActiveFilters = search || category !== "all" || difficulty !== "all";
+  /** Reset all filter controls back to their default (unfiltered) values. */
   const clearFilters = () => {
     setSearch("");
     setCategory("all");
     setDifficulty("all");
   };
 
+  /** Reusable filter panel rendered in both the desktop sidebar and mobile drawer. */
   const FilterPanel = () => (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -165,7 +202,10 @@ export default function Activities() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="group flex flex-col bg-card border border-border overflow-hidden hover:border-primary/50 transition-colors"
+                  /* UX FIX #5: Card lift micro-interaction. 1px translate + deep shadow
+                     creates depth on hover. 300ms duration matches the image scale-105
+                     transition for coordinated motion. */
+                  className="group flex flex-col bg-card border border-border overflow-hidden hover:border-primary/50 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
                 >
                   <Link href={`/activities/${activity.id}`}>
                     <div className="relative aspect-[4/3] overflow-hidden">
@@ -201,10 +241,20 @@ export default function Activities() {
                           <Clock className="h-3 w-3 md:h-4 md:w-4 text-primary shrink-0" />
                           <span className="text-xs md:text-sm">{activity.durationMinutes} min</span>
                         </div>
-                        <div className="flex items-center gap-1 md:gap-2">
-                          <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-primary shrink-0" />
-                          <span className="text-xs md:text-sm">
-                            ${activity.priceLow} – ${activity.priceHigh}
+                        {/* UX FIX #8: Price hierarchy — large serif starting price anchors
+                            the value, secondary range shown smaller. "Per Person" label
+                            clarifies unit, reducing pre-purchase confusion. */}
+                        <div className="flex flex-col">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-lg md:text-xl font-serif text-foreground">
+                              ${activity.priceLow}
+                            </span>
+                            {activity.priceHigh > activity.priceLow && (
+                              <span className="text-xs text-muted-foreground">– ${activity.priceHigh}</span>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                            Per Person
                           </span>
                         </div>
                         <div className="flex items-center justify-end uppercase tracking-wider text-xs">
@@ -218,17 +268,23 @@ export default function Activities() {
 
               {activities?.length === 0 && (
                 <div className="col-span-full py-24 text-center">
-                  <h3 className="font-serif text-2xl text-foreground mb-2">
-                    No experiences found
+                  <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-muted/50 flex items-center justify-center">
+                    <Search className="w-8 h-8 text-muted-foreground/50" />
+                  </div>
+                  <h3 className="font-serif text-2xl text-foreground mb-3">
+                    No experiences match your filters
                   </h3>
-                  <p className="text-muted-foreground">Adjust your filters to discover more.</p>
-                  <Button
-                    variant="link"
-                    onClick={clearFilters}
-                    className="text-primary mt-4"
-                  >
-                    Clear all filters
-                  </Button>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    Try adjusting your search criteria or browse all curated experiences.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="outline" onClick={clearFilters} className="font-serif uppercase tracking-widest">
+                      Clear Filters
+                    </Button>
+                    <Button asChild className="bg-primary text-primary-foreground font-serif uppercase tracking-widest">
+                      <Link href="/activities">View All</Link>
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

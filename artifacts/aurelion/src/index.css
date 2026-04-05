@@ -69,7 +69,10 @@
   --secondary-foreground: 40 33% 98%;
 
   --muted: 225 30% 15%;
-  --muted-foreground: 225 15% 65%;
+  /* UX FIX #6: Bumped from 65% to 70% lightness for WCAG AA compliance.
+     Against --background (8% lightness), 70% yields ~5.5:1 contrast ratio,
+     comfortably above the 4.5:1 AA minimum for normal text. */
+  --muted-foreground: 225 15% 70%;
 
   --accent: 172 66% 50%; /* #2dd4bf */
   --accent-foreground: 225 50% 8%;

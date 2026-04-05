@@ -1,6 +1,29 @@
+/**
+ * @module pages/Chat
+ * @description AI Concierge chat page. Provides a real-time conversational
+ * interface where Premium-tier users can ask for Aruba travel recommendations,
+ * booking advice, and local secrets.
+ *
+ * Access control:
+ *  - Non-Premium users see a full-page PremiumLock component instead of the chat UI.
+ *  - Premium check considers profile tier, admin role, and purchase history.
+ *
+ * Features:
+ *  - Message history loaded via `useGetChatMessages`.
+ *  - New messages sent via `useSendChatMessage` mutation; message list is
+ *    refetched on success to show both the user's message and the AI response.
+ *  - Auto-scroll to bottom of message list when messages change.
+ *  - Typing indicator (animated dots) while the send mutation is pending.
+ *  - Empty state with a welcome prompt when no messages exist.
+ *
+ * @route /chat/:sessionId
+ * @auth Required (implicitly via API)
+ * @tier Premium required
+ */
+
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { 
+import {
   useGetChatMessages,
   useSendChatMessage,
   useGetMe,
@@ -10,43 +33,69 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, User, Sparkles, ChevronLeft } from "lucide-react";
-import { PremiumLock } from "@/components/ui/premium-lock";
+import { PremiumLockEnhanced } from "@/components/ui/premium-lock-enhanced";
 
+/**
+ * Chat page component (AI Concierge).
+ *
+ * @route /chat/:sessionId
+ * @auth Required
+ * @tier Premium
+ */
 export default function Chat() {
+  /** Extract the chat session ID from the URL. */
   const params = useParams();
   const sessionId = parseInt(params.sessionId || "0", 10);
+  /** Controlled input state for the message compose field. */
   const [content, setContent] = useState("");
+  /** Ref to the scroll container — used to auto-scroll to the latest message. */
   const scrollRef = useRef<HTMLDivElement>(null);
-  
+
+  /** Query: current user profile (for tier check). */
   const { data: user } = useGetMe();
+  /** Query: purchase history (for tier check). */
   const { data: purchases } = useListPurchases({
     query: { enabled: !!user?.isAuthenticated }
   });
-  
+
+  /** Query: chat message history for this session. Re-fetched after each sent message. */
   const { data: messages, refetch } = useGetChatMessages(sessionId, {
     query: { enabled: !!sessionId, queryKey: [`/api/chat/${sessionId}`] }
   });
-  
+
+  /** Mutation: send a new user message to the AI concierge. */
   const sendMutation = useSendChatMessage();
 
+  // -- Premium tier check --
   const userTier = user?.tier ?? "free";
+  /** True if user has Premium access (profile tier, admin role, or PREMIUM purchase). */
   const isPremium = userTier === "premium" || user?.role === "admin" || purchases?.some(p => p.productType === 'PREMIUM');
 
+  /**
+   * Auto-scroll effect: whenever the messages array changes (new message received),
+   * scroll the chat container to the bottom so the latest message is visible.
+   */
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
 
+  /**
+   * Send message handler. Prevents default form submission, guards against
+   * empty input, sends the message, then clears the input and refetches
+   * messages to pick up both the user message and AI response.
+   */
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
-    
+
     sendMutation.mutate(
       { sessionId, data: { content } },
       {
         onSuccess: () => {
           setContent("");
+          // Refetch to get both the sent message and the AI's response
           refetch();
         }
       }
@@ -56,9 +105,15 @@ export default function Chat() {
   if (!isPremium) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-24">
-        <PremiumLock 
-          title="AI Concierge Access" 
+        <PremiumLockEnhanced
+          title="AI Concierge Access"
           description="Upgrade to Concierge membership to chat with our locally-trained AI planning assistant 24/7."
+          features={[
+            "Unlimited AI concierge conversations",
+            "Personalized activity recommendations",
+            "Real-time itinerary optimization",
+            "Insider booking intelligence",
+          ]}
         />
       </div>
     );
