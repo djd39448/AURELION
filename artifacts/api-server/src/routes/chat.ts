@@ -1,3 +1,24 @@
+/**
+ * @module routes/chat
+ * @description AI concierge chat routes for AURELION Premium users.
+ *
+ * ## Access control
+ * - All routes require authentication.
+ * - Session creation and message sending require Premium entitlement,
+ *   verified via {@link canUseAIChat}.
+ * - Session ownership is verified on all message-level operations.
+ *
+ * ## AI integration
+ * - Uses OpenAI `gpt-4o-mini` with 800 max tokens per response.
+ * - The system prompt injects ALL activities from the database as JSON
+ *   context, ensuring the AI only recommends real, bookable activities.
+ * - Full conversation history is sent with each request for context continuity.
+ *
+ * ## Mock mode
+ * - When `OPENAI_API_KEY` is not set, the `openai` client is null.
+ * - Mock mode returns formatted suggestions from the first 3 activities in
+ *   the database, enabling development/testing without an OpenAI account.
+ */
 import { Router } from "express";
 import { db, chatSessionsTable, chatMessagesTable, activitiesTable, itinerariesTable, itineraryItemsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
@@ -8,10 +29,24 @@ import OpenAI from "openai";
 
 const router = Router();
 
+/**
+ * OpenAI client instance. Null when OPENAI_API_KEY is not configured,
+ * which activates mock mode — AI responses are replaced with static
+ * activity suggestions from the database.
+ */
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
+/**
+ * @route GET /api/chat/sessions
+ * @auth Required
+ * @tier PREMIUM (implicitly — only Premium users can create sessions, but listing is not tier-gated)
+ * @returns {Array<ChatSession>} User's chat sessions ordered by `createdAt` ascending.
+ *   Each session includes: id, userId, itineraryId, createdAt (ISO 8601).
+ * @throws {401} Unauthorized
+ * @throws {500} Internal server error
+ */
 router.get("/chat/sessions", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -29,6 +64,20 @@ router.get("/chat/sessions", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * @route POST /api/chat/sessions
+ * @auth Required
+ * @tier PREMIUM — entitlement-gated via {@link canUseAIChat}
+ * @body {CreateChatSessionBody} — `{ itineraryId?: number }` (optional link to an itinerary)
+ * @returns {ChatSession} The newly created session (HTTP 201)
+ * @throws {401} Unauthorized
+ * @throws {403} "Upgrade to Concierge Intelligence to access AI chat"
+ * @throws {500} Internal server error
+ *
+ * @remarks If body parsing fails, `itineraryId` defaults to null (session
+ * is created without an itinerary link). This is intentional — the body
+ * schema is optional.
+ */
 router.post("/chat/sessions", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -50,6 +99,17 @@ router.post("/chat/sessions", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * @route GET /api/chat/sessions/:sessionId/messages
+ * @auth Required
+ * @returns {Array<ChatMessage>} Message history for the session, ordered by
+ *   `createdAt` ascending. Each message includes: id, sessionId, role
+ *   ("user" | "assistant"), content, createdAt (ISO 8601).
+ * @throws {400} Invalid session ID
+ * @throws {401} Unauthorized
+ * @throws {404} Session not found (or belongs to another user — ownership verified)
+ * @throws {500} Internal server error
+ */
 router.get("/chat/sessions/:sessionId/messages", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -72,6 +132,40 @@ router.get("/chat/sessions/:sessionId/messages", async (req, res): Promise<void>
   }
 });
 
+/**
+ * @route POST /api/chat/sessions/:sessionId/messages
+ * @auth Required
+ * @tier PREMIUM — entitlement re-checked on every message send
+ * @body {SendChatMessageBody} — `{ content: string }` — the user's message text
+ * @returns {ChatMessage} The AI assistant's response message (role: "assistant").
+ *   Includes: id, sessionId, role, content (markdown-formatted), createdAt.
+ * @throws {400} Invalid session ID or Zod validation failure
+ * @throws {401} Unauthorized
+ * @throws {403} "Premium required" — entitlement check failed
+ * @throws {404} Session not found (or belongs to another user)
+ * @throws {500} Internal server error / OpenAI API failure
+ *
+ * @description Sends a user message and returns the AI concierge response.
+ *
+ * ## Flow:
+ * 1. Verify auth and Premium entitlement.
+ * 2. Verify session ownership.
+ * 3. Persist the user's message to `chatMessagesTable`.
+ * 4. Load ALL activities from the database (used as AI context).
+ * 5. Load full conversation history for the session.
+ * 6. Build the system prompt with activity catalog JSON.
+ * 7. Call OpenAI `gpt-4o-mini` (or return mock suggestions if no API key).
+ * 8. Persist and return the assistant's response.
+ *
+ * ## System prompt behavior:
+ * The AI is instructed to act as a luxury Aruba adventure concierge.
+ * It receives the complete activity database as JSON and is forbidden from
+ * inventing activities or provider details not in the catalog.
+ *
+ * ## Mock mode:
+ * Returns a markdown-formatted message suggesting the first 3 activities
+ * from the database with their price ranges.
+ */
 router.post("/chat/sessions/:sessionId/messages", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }

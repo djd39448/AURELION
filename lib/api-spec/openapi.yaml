@@ -1,3 +1,36 @@
+# =============================================================================
+# AURELION OpenAPI Specification
+# =============================================================================
+#
+# This file is the SINGLE SOURCE OF TRUTH for the entire API contract between
+# the Express backend (api-server) and all frontend clients (React web app,
+# future Expo mobile app).
+#
+# ## Code generation
+#
+# Orval reads this spec and generates:
+#
+#   1. React Query hooks + TypeScript interfaces  ->  lib/api-client-react/src/generated/
+#   2. Zod validation schemas + inferred types    ->  lib/api-zod/src/generated/
+#
+# To regenerate after editing this file:
+#
+#   pnpm --filter @workspace/api-spec run codegen
+#
+# ## Path prefix convention
+#
+# All paths in this spec are relative.  The `servers[0].url` is set to
+# `/api`, which means every path below (e.g. `/activities`) is served at
+# `/api/activities` in production.  During local development the Vite dev
+# server proxies `/api/*` to the Express server on port 3001.
+#
+# ## Important: do NOT change `info.title`
+#
+# The title "Api" determines the generated file names (`api.ts`,
+# `api.schemas.ts`).  Changing it would break all import paths in the
+# monorepo.
+#
+# =============================================================================
 openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
@@ -728,6 +761,8 @@ components:
         email:
           type: string
         role:
+          type: string
+        tier:
           type: string
         isAuthenticated:
           type: boolean

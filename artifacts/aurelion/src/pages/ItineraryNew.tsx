@@ -1,3 +1,18 @@
+/**
+ * @module pages/ItineraryNew
+ * @description Create-itinerary form page. Collects a trip title and duration
+ * (1-14 days) via react-hook-form + Zod validation, then creates a new itinerary
+ * through the `useCreateItinerary` mutation.
+ *
+ * On success:
+ *  - Invalidates the itinerary list cache so the Dashboard shows the new entry.
+ *  - Navigates to the newly created itinerary's detail/builder page.
+ *
+ * @route /itineraries/new
+ * @auth Required (implicitly — the API rejects unauthenticated requests)
+ * @tier None required (all tiers can create itineraries)
+ */
+
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,30 +25,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
+/** Zod schema for new-itinerary form. Coerces totalDays from string (Select) to number. */
 const createSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   totalDays: z.coerce.number().min(1, "Must be at least 1 day").max(14, "Max 14 days supported for now"),
 });
 
+/**
+ * ItineraryNew page component.
+ *
+ * @route /itineraries/new
+ * @auth Required
+ * @tier None
+ */
 export default function ItineraryNew() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  /** Used to invalidate the itinerary list cache after creation. */
   const queryClient = useQueryClient();
+  /** Mutation: POST /api/itineraries with title + totalDays. */
   const createMutation = useCreateItinerary();
 
+  /** react-hook-form instance with Zod validation. Default trip: 5 days. */
   const form = useForm<z.infer<typeof createSchema>>({
-    resolver: zodResolver(createSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- zod v3 compat types don't satisfy @hookform/resolvers' ZodType; safe at runtime
+    resolver: zodResolver(createSchema as any),
     defaultValues: {
       title: "My Aruba Trip",
       totalDays: 5,
     },
   });
 
+  /**
+   * Form submission handler.
+   * Creates the itinerary, invalidates the list cache, and navigates to the builder.
+   */
   const onSubmit = (data: z.infer<typeof createSchema>) => {
     createMutation.mutate(
       { data },
       {
         onSuccess: (itinerary) => {
+          // Invalidate itinerary list so Dashboard picks up the new entry
           queryClient.invalidateQueries({ queryKey: ["/api/itineraries"] });
           toast({ title: "Itinerary created", description: "Let's start adding activities." });
           setLocation(`/itineraries/${itinerary.id}`);

@@ -1,7 +1,19 @@
+/**
+ * @module components/layout/Footer
+ * @description Site-wide footer rendered at the bottom of every page via MainLayout.
+ * Contains the AURELION brand mark, "Discover" navigation links (Experiences,
+ * Membership, Our Story), placeholder legal links, and a copyright notice.
+ *
+ * This is a purely presentational component with no data fetching or state.
+ */
+
 import { Navbar } from "./Navbar";
 import { Link } from "wouter";
 import { Compass } from "lucide-react";
 
+/**
+ * Footer component — rendered beneath all page content in MainLayout.
+ */
 export function Footer() {
   return (
     <footer className="bg-background border-t border-border pt-16 pb-8">

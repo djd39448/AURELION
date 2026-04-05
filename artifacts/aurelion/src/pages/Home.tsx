@@ -1,3 +1,17 @@
+/**
+ * @module pages/Home
+ * @description Landing page for the AURELION luxury Aruba adventure platform.
+ * Renders four sections:
+ *   1. Full-viewport hero with CTA buttons leading to Activities and Pricing.
+ *   2. "Featured Experiences" grid — server-curated activities (via useGetFeaturedActivities).
+ *   3. "Discover by Terrain" category grid — each tile links to a filtered Activities view.
+ *   4. "Why Aurelion" value-proposition section (Vetted Excellence, AI Concierge, Insider Intelligence).
+ *
+ * @route /
+ * @auth None required (fully public)
+ * @tier None required
+ */
+
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useGetFeaturedActivities, useGetCategories } from "@workspace/api-client-react";
@@ -5,6 +19,12 @@ import { motion } from "framer-motion";
 import { ArrowRight, Compass, Shield, Sparkles } from "lucide-react";
 import { getImageUrl } from "@/lib/image-url";
 
+/**
+ * Mapping of category name -> Tailwind gradient classes.
+ * Each category tile in the "Discover by Terrain" grid uses one of these
+ * dark-tone gradients as its background. Categories not in this map
+ * fall back to a neutral gradient.
+ */
 const CATEGORY_GRADIENTS: Record<string, string> = {
   "Cliff & Vertical Adventures": "from-stone-900 via-amber-950 to-stone-800",
   "Off-Road Expeditions": "from-yellow-950 via-amber-900 to-orange-950",
@@ -14,8 +34,17 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   "Scenic Riding": "from-orange-950 via-amber-900 to-yellow-950",
 };
 
+/**
+ * Home page component.
+ *
+ * @route /
+ * @auth None
+ * @tier None
+ */
 export default function Home() {
+  /** Fetch server-curated featured activities for the hero grid. */
   const { data: featured } = useGetFeaturedActivities();
+  /** Fetch all activity categories (name + count) for the terrain grid. */
   const { data: categories } = useGetCategories();
 
   return (

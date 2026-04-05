@@ -1,3 +1,19 @@
+/**
+ * @module routes/activities
+ * @description Public activity browsing routes for the AURELION platform.
+ *
+ * All routes in this module are unauthenticated — no session required.
+ * They power the public-facing activity catalog, search, and category pages.
+ *
+ * ## Response shape conventions
+ * - List views intentionally OMIT premium-only fields (`premiumBookingGuide`,
+ *   `insiderTips`) to avoid leaking gated content. These fields are only
+ *   exposed through tier-appropriate routes elsewhere.
+ * - Detail view (`/:id`) includes `basicBookingGuide` and provider info
+ *   but still omits premium fields.
+ * - All `createdAt` timestamps are serialized as ISO 8601 strings.
+ * - `tags` defaults to `[]` when null in the database.
+ */
 import { Router } from "express";
 import { db, activitiesTable } from "@workspace/db";
 import { eq, ilike, and, gte, lte, or, sql } from "drizzle-orm";
@@ -5,6 +21,32 @@ import { GetActivityParams, ListActivitiesQueryParams } from "@workspace/api-zod
 
 const router = Router();
 
+/**
+ * @route GET /api/activities
+ * @auth None
+ * @returns {Array<ActivityListItem>} Array of activities matching filters.
+ *   Each item contains: id, title, category, difficulty, durationMinutes,
+ *   priceLow, priceHigh, location, imageUrl, reviewSummary, tags, description,
+ *   whatToBring, whatToExpect, createdAt.
+ * @throws {500} Internal server error
+ *
+ * @description Lists activities with optional filtering and full-text search.
+ *
+ * ## Query parameters (all optional, validated via {@link ListActivitiesQueryParams}):
+ * - `search` — Full-text search via ILIKE on title, description, and category.
+ *   Wrapped with `%` wildcards for substring matching.
+ * - `category` — Exact match on activity category
+ * - `difficulty` — Exact match on difficulty level
+ * - `minPrice` — Minimum `priceLow` (inclusive, via `>=`)
+ * - `maxPrice` — Maximum `priceHigh` (inclusive, via `<=`)
+ * - `maxDuration` — Maximum `durationMinutes` (inclusive, via `<=`)
+ *
+ * All filter conditions are ANDed together. When `search` is provided,
+ * the text search is ORed across the three text fields, then ANDed with
+ * any other active filters.
+ *
+ * Results are ordered by `createdAt` ascending.
+ */
 router.get("/activities", async (req, res): Promise<void> => {
   try {
     const queryParsed = ListActivitiesQueryParams.safeParse(req.query);
@@ -80,6 +122,21 @@ router.get("/activities", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * @route GET /api/activities/featured
+ * @auth None
+ * @returns {Array<ActivityListItem>} Up to 6 featured activities.
+ * @throws {500} Internal server error
+ *
+ * @description Returns featured activities for the homepage hero/carousel.
+ *
+ * Selection logic:
+ * 1. Query activities where `isFeatured = 1`, limited to 6.
+ * 2. If fewer than 6 featured activities exist, falls back to ANY 6 activities
+ *    (ignoring the featured flag entirely — not a merge, a full replacement).
+ *
+ * Response shape is identical to the list endpoint (no premium fields).
+ */
 router.get("/activities/featured", async (req, res): Promise<void> => {
   try {
     const activities = await db.select().from(activitiesTable)
@@ -115,6 +172,17 @@ router.get("/activities/featured", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * @route GET /api/activities/categories
+ * @auth None
+ * @returns {Array<{ category: string, count: number, imageUrl: string | null }>}
+ *   Aggregate category counts with a representative image (MAX of imageUrl per group).
+ * @throws {500} Internal server error
+ *
+ * @description Returns all activity categories with their activity count and
+ * a representative image URL. Used by the category browsing page.
+ * The image is selected via SQL `MAX(imageUrl)` — deterministic but arbitrary.
+ */
 router.get("/activities/categories", async (req, res): Promise<void> => {
   try {
     const result = await db.select({
@@ -129,6 +197,20 @@ router.get("/activities/categories", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * @route GET /api/activities/:id
+ * @auth None
+ * @returns {ActivityDetail} Full activity detail including basicBookingGuide,
+ *   providerName, providerWebsite, providerPhone. Still omits premium-only
+ *   fields (premiumBookingGuide, insiderTips).
+ * @throws {400} Invalid activity ID (non-numeric or Zod validation failure)
+ * @throws {404} Activity not found
+ * @throws {500} Internal server error
+ *
+ * @description Returns a single activity by ID with provider contact information
+ * and the basic booking guide. This is the most detailed public view available.
+ * Premium content is served through separate entitlement-gated routes.
+ */
 router.get("/activities/:id", async (req, res): Promise<void> => {
   const params = GetActivityParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {

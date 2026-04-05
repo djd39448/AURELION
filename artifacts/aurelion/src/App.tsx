@@ -1,3 +1,18 @@
+/**
+ * @module App
+ * @description Root application component for AURELION.
+ * Sets up the provider tree (TanStack Query, Tooltip, Toaster) and defines
+ * all client-side routes via Wouter's `<Switch>`.
+ *
+ * Provider hierarchy (outermost to innermost):
+ *   QueryClientProvider  -- data-fetching cache & mutations
+ *     TooltipProvider    -- shadcn/ui tooltip context
+ *       WouterRouter     -- client-side routing with Vite BASE_URL support
+ *         MainLayout     -- persistent Navbar + Footer chrome
+ *           Switch/Route -- matched page component
+ *       Toaster          -- global toast notification outlet (outside router so toasts persist across navigations)
+ */
+
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,8 +34,33 @@ import ItineraryDetail from "@/pages/ItineraryDetail";
 import Chat from "@/pages/Chat";
 import Admin from "@/pages/Admin";
 
+/**
+ * Singleton TanStack QueryClient instance.
+ * Uses default options (staleTime, gcTime, retry) — can be customised here if needed.
+ */
 const queryClient = new QueryClient();
 
+/**
+ * Router — maps URL paths to page components inside the shared MainLayout.
+ *
+ * Route overview:
+ *  - /                     Home          (public)
+ *  - /activities           Activities    (public)
+ *  - /activities/:id       ActivityDetail(public, premium content gated)
+ *  - /pricing              Pricing       (public)
+ *  - /about                About         (public)
+ *  - /auth/login           Login         (public, guest-only intent)
+ *  - /auth/register        Register      (public, guest-only intent)
+ *  - /dashboard            Dashboard     (auth required)
+ *  - /itineraries/new      ItineraryNew  (auth required)
+ *  - /itineraries/:id      ItineraryDetail (auth required)
+ *  - /chat/:sessionId      Chat          (auth + premium tier required)
+ *  - /admin                Admin         (auth + admin role required)
+ *  - *                     NotFound      (catch-all 404)
+ *
+ * Wouter's `<Switch>` renders only the first matching route.
+ * The final `<Route>` without a `path` acts as the 404 fallback.
+ */
 function Router() {
   return (
     <MainLayout>
@@ -37,19 +77,32 @@ function Router() {
         <Route path="/itineraries/:id" component={ItineraryDetail} />
         <Route path="/chat/:sessionId" component={Chat} />
         <Route path="/admin" component={Admin} />
+        {/* Catch-all: renders when no route above matches */}
         <Route component={NotFound} />
       </Switch>
     </MainLayout>
   );
 }
 
+/**
+ * App — top-level component exported as the default.
+ * Wraps the entire application in the required provider tree.
+ *
+ * The WouterRouter `base` prop strips the trailing slash from Vite's BASE_URL
+ * so that all `<Link href="...">` paths resolve correctly in both development
+ * and production (where the app may be served from a sub-directory).
+ *
+ * @returns {JSX.Element} The fully-provided application tree.
+ */
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        {/* Strip trailing slash from BASE_URL so Wouter resolves paths correctly */}
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <Router />
         </WouterRouter>
+        {/* Toaster lives outside the router so notifications survive page transitions */}
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

@@ -1,3 +1,22 @@
+/**
+ * @module pages/Register
+ * @description Registration form page. Collects name, email, and password
+ * via react-hook-form + Zod validation, then submits via the `useRegister` mutation.
+ *
+ * On success:
+ *  - The new user object is written directly into the TanStack Query cache
+ *    (key: "/api/auth/me") so the session is established immediately.
+ *  - A "Welcome to Aurelion" toast is shown.
+ *  - The user is redirected to /dashboard.
+ *
+ * On failure:
+ *  - A destructive toast with a generic retry message is shown.
+ *
+ * @route /auth/register
+ * @auth None required (intended for unauthenticated users)
+ * @tier None required
+ */
+
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -10,20 +29,32 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
+/** Zod schema for registration form validation (name, email, password). */
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+/**
+ * Register page component.
+ *
+ * @route /auth/register
+ * @auth None
+ * @tier None
+ */
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  /** Direct access to the QueryClient to optimistically set the user cache on registration. */
   const queryClient = useQueryClient();
+  /** Mutation: POST /api/auth/register with name + email + password. */
   const registerMutation = useRegister();
 
+  /** react-hook-form instance with Zod schema validation. */
   const form = useForm<z.infer<typeof registerSchema>>({
-    resolver: zodResolver(registerSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- zod v3 compat types don't satisfy @hookform/resolvers' ZodType; safe at runtime
+    resolver: zodResolver(registerSchema as any),
     defaultValues: {
       name: "",
       email: "",
@@ -31,11 +62,16 @@ export default function Register() {
     },
   });
 
+  /**
+   * Form submission handler.
+   * Calls the register mutation; on success, seeds the auth cache and navigates to dashboard.
+   */
   const onSubmit = (data: z.infer<typeof registerSchema>) => {
     registerMutation.mutate(
       { data },
       {
         onSuccess: (userData) => {
+          // Optimistically populate the auth cache so Navbar/Dashboard react immediately
           queryClient.setQueryData(["/api/auth/me"], { ...userData, isAuthenticated: true });
           toast({ title: "Account created", description: "Welcome to Aurelion." });
           setLocation("/dashboard");

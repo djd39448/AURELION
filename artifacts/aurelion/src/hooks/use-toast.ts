@@ -1,3 +1,21 @@
+/**
+ * @module hooks/use-toast
+ * @description Global toast notification system for AURELION.
+ * Implements a lightweight, framework-agnostic state management pattern
+ * (external store + listeners) that works with React without requiring a
+ * Context provider. This allows the `toast()` function to be called from
+ * anywhere (including outside React components).
+ *
+ * Architecture:
+ *  - `memoryState` holds the current array of toasts.
+ *  - `dispatch()` runs the reducer and notifies all subscribed listeners.
+ *  - `useToast()` subscribes the calling component to state changes via `useEffect`.
+ *  - The `<Toaster />` component (in components/ui) reads from `useToast()` and
+ *    renders the visible toasts.
+ *
+ * Based on the shadcn/ui toast pattern.
+ */
+
 import * as React from "react"
 
 import type {
@@ -5,9 +23,13 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
+/** Maximum number of toasts visible at once. Older toasts are evicted. */
 const TOAST_LIMIT = 1
+/** Delay (ms) before a dismissed toast is fully removed from state.
+ *  Set very high (~16 min) to let the exit animation complete. */
 const TOAST_REMOVE_DELAY = 1000000
 
+/** Extended toast type combining shadcn ToastProps with content fields. */
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
@@ -15,6 +37,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
+/** Discriminated union of all toast action types. */
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
@@ -22,8 +45,10 @@ const actionTypes = {
   REMOVE_TOAST: "REMOVE_TOAST",
 } as const
 
+/** Auto-incrementing counter for generating unique toast IDs. */
 let count = 0
 
+/** Generate a unique ID for a new toast. Wraps around at MAX_SAFE_INTEGER. */
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
   return count.toString()
@@ -31,6 +56,7 @@ function genId() {
 
 type ActionType = typeof actionTypes
 
+/** Union type for all possible dispatch actions. */
 type Action =
   | {
       type: ActionType["ADD_TOAST"]
@@ -49,12 +75,18 @@ type Action =
       toastId?: ToasterToast["id"]
     }
 
+/** Shape of the toast store state. */
 interface State {
   toasts: ToasterToast[]
 }
 
+/** Map of toast ID -> removal timeout handle. Prevents double-queueing. */
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+/**
+ * Schedule a toast for removal after TOAST_REMOVE_DELAY.
+ * Idempotent — if the toast is already queued, this is a no-op.
+ */
 const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     return
@@ -71,15 +103,21 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+/**
+ * Pure reducer for toast state transitions.
+ * Handles ADD, UPDATE, DISMISS (set open=false + queue removal), and REMOVE.
+ */
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
+      // Prepend new toast and enforce the TOAST_LIMIT cap
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
       }
 
     case "UPDATE_TOAST":
+      // Merge partial updates into the matching toast
       return {
         ...state,
         toasts: state.toasts.map((t) =>
@@ -92,14 +130,17 @@ export const reducer = (state: State, action: Action): State => {
 
       // ! Side effects ! - This could be extracted into a dismissToast() action,
       // but I'll keep it here for simplicity
+      // Queue the dismissed toast(s) for delayed removal (allows exit animation)
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
+        // Dismiss all toasts if no specific ID provided
         state.toasts.forEach((toast) => {
           addToRemoveQueue(toast.id)
         })
       }
 
+      // Mark matching toast(s) as closed (triggers exit animation in UI)
       return {
         ...state,
         toasts: state.toasts.map((t) =>
@@ -113,6 +154,7 @@ export const reducer = (state: State, action: Action): State => {
       }
     }
     case "REMOVE_TOAST":
+      // Fully remove from state (after animation delay)
       if (action.toastId === undefined) {
         return {
           ...state,
@@ -126,10 +168,19 @@ export const reducer = (state: State, action: Action): State => {
   }
 }
 
+/**
+ * Array of subscribed setState callbacks.
+ * Each `useToast()` hook instance registers its setState here.
+ */
 const listeners: Array<(state: State) => void> = []
 
+/** In-memory singleton state — the source of truth for all toast data. */
 let memoryState: State = { toasts: [] }
 
+/**
+ * Run the reducer and notify all subscribed components of the new state.
+ * This is the core dispatch function for the external store pattern.
+ */
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
   listeners.forEach((listener) => {
@@ -139,6 +190,13 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
+/**
+ * Imperatively show a toast notification.
+ * Can be called from anywhere — inside or outside React components.
+ *
+ * @param props - Toast content (title, description, variant, action, etc.).
+ * @returns An object with `id`, `dismiss()`, and `update()` methods.
+ */
 function toast({ ...props }: Toast) {
   const id = genId()
 
@@ -168,12 +226,21 @@ function toast({ ...props }: Toast) {
   }
 }
 
+/**
+ * React hook to subscribe to the global toast state.
+ * Returns the current toasts array plus the `toast()` and `dismiss()` helpers.
+ *
+ * Subscribes the component's setState to the global listener list on mount,
+ * and unsubscribes on unmount.
+ */
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
+    // Subscribe this component to global toast state changes
     listeners.push(setState)
     return () => {
+      // Unsubscribe on unmount
       const index = listeners.indexOf(setState)
       if (index > -1) {
         listeners.splice(index, 1)

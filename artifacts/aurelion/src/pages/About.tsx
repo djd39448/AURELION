@@ -1,6 +1,26 @@
+/**
+ * @module pages/About
+ * @description Brand story page for AURELION. Communicates the platform's
+ * mission, curation process, and AI Concierge offering through long-form prose.
+ * Ends with a CTA linking to the activity directory.
+ *
+ * This page is entirely static content with no data fetching or auth checks.
+ *
+ * @route /about
+ * @auth None required
+ * @tier None required
+ */
+
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
+/**
+ * About page component.
+ *
+ * @route /about
+ * @auth None
+ * @tier None
+ */
 export default function About() {
   return (
     <div className="w-full">

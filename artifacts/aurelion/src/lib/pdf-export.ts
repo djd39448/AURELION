@@ -1,3 +1,19 @@
+/**
+ * @module lib/pdf-export
+ * @description PDF export utility for AURELION itineraries.
+ * Generates a beautifully styled HTML document (with a cover page and
+ * day-by-day activity cards) and opens it in a new browser window that
+ * auto-triggers the browser's print dialog. The user can then choose
+ * "Save as PDF" from the print dialog.
+ *
+ * This approach avoids heavy PDF libraries — it relies entirely on
+ * semantic HTML + CSS `@page` rules + `window.print()`.
+ */
+
+/**
+ * Shape of the data returned by the `exportItinerary` API endpoint.
+ * Contains the full itinerary with nested items/activities, plus an export timestamp.
+ */
 export type ItineraryExportData = {
   itinerary: {
     title: string;
@@ -27,6 +43,20 @@ export type ItineraryExportData = {
   exportedAt: string;
 };
 
+/**
+ * Open a new browser window with a styled, print-ready itinerary document.
+ *
+ * The generated HTML includes:
+ *  - A dark cover page with the AURELION brand, itinerary title, and date.
+ *  - Content pages with day headers, time-slot labels, and activity cards
+ *    showing title, metadata, description, what-to-bring/expect, and tags.
+ *  - A footer with the AURELION brand and preparation date.
+ *  - Google Fonts (Playfair Display + Lato) loaded via CDN.
+ *  - `@page` CSS for A4 sizing.
+ *  - A `<script>` that calls `window.print()` after a 600ms delay.
+ *
+ * @param data - The full itinerary export payload from the API.
+ */
 export function printItineraryPDF(data: ItineraryExportData) {
   const { itinerary, exportedAt } = data;
   const gold = "#c8a96e";

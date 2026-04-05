@@ -1,3 +1,21 @@
+/**
+ * @module components/layout/Navbar
+ * @description Fixed top navigation bar rendered on every page via MainLayout.
+ *
+ * Features:
+ *  - Brand logo/name linking to home.
+ *  - Desktop: horizontal nav links (Experiences, Pricing, About),
+ *    optional "My Dashboard" link (auth-only), and a user avatar dropdown
+ *    (Dashboard, Admin for admin role, Log out) or a "SIGN IN" button for guests.
+ *  - Mobile: hamburger toggle that reveals an animated slide-down menu
+ *    with the same links plus sign-in / sign-out actions.
+ *  - Admin link is conditionally shown when `user.role === "admin"`.
+ *
+ * Data fetching:
+ *  - `useGetMe()` — determines auth state and role for conditional rendering.
+ *  - `useLogout()` — mutation to end the session.
+ */
+
 import { Link, useLocation } from "wouter";
 import { useGetMe, useLogout } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -13,12 +31,19 @@ import { Menu, X, Compass, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+/**
+ * Navbar component — fixed-position header with responsive navigation.
+ */
 export function Navbar() {
   const [location, setLocation] = useLocation();
+  /** Query: current authenticated user (drives auth-conditional rendering). */
   const { data: user } = useGetMe();
+  /** Mutation: log out the current session and redirect to home. */
   const logout = useLogout();
+  /** State: controls mobile hamburger menu open/close. */
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  /** Log out and redirect to the home page on success. */
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
@@ -27,6 +52,7 @@ export function Navbar() {
     });
   };
 
+  /** Primary navigation links shown in both desktop and mobile menus. */
   const navLinks = [
     { label: "Experiences", href: "/activities" },
     { label: "Pricing", href: "/pricing" },

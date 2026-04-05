@@ -1,32 +1,70 @@
+/**
+ * @module pages/Pricing
+ * @description Three-tier pricing page for AURELION memberships.
+ * Presents Explorer (free), Planner ($9.99/trip), and Concierge ($49.99/trip)
+ * tiers in a responsive card grid. Each paid tier has a "Upgrade" button that
+ * initiates a Stripe Checkout session via the `useCreateCheckout` mutation.
+ *
+ * Business logic:
+ *  - Unauthenticated users clicking "Upgrade" are redirected to /auth/login first.
+ *  - Already-purchased tiers show a disabled "Purchased" / "Active" button.
+ *  - The Planner card is visually elevated (border-2, shadow, -translate-y) with a "Popular" badge.
+ *
+ * @route /pricing
+ * @auth None required (public page; auth required to initiate checkout)
+ * @tier None required
+ */
+
 import { Button } from "@/components/ui/button";
 import { useCreateCheckout, useListPurchases, useGetMe } from "@workspace/api-client-react";
 import { Check, Compass, Star, Shield } from "lucide-react";
 import { useLocation } from "wouter";
 
+/**
+ * Pricing page component.
+ *
+ * @route /pricing
+ * @auth None (redirects to login on upgrade attempt if unauthenticated)
+ * @tier None
+ */
 export default function Pricing() {
   const [, setLocation] = useLocation();
+  /** Query: current user profile — used for auth check before checkout. */
   const { data: user } = useGetMe();
+  /** Query: purchase history — determines which tiers are already owned. */
   const { data: purchases } = useListPurchases({
     query: { enabled: !!user?.isAuthenticated }
   });
 
+  /** Mutation: creates a Stripe Checkout session and returns a redirect URL. */
   const checkoutMutation = useCreateCheckout();
 
+  /**
+   * Initiate the upgrade flow for a given tier.
+   * If the user is not authenticated, redirect to login instead.
+   * On success, perform a full-page redirect to the Stripe-hosted checkout URL.
+   *
+   * @param tier - The product type to purchase ('BASIC' or 'PREMIUM').
+   */
   const handleUpgrade = (tier: 'BASIC' | 'PREMIUM') => {
+    // Guard: redirect unauthenticated users to login first
     if (!user?.isAuthenticated) {
       setLocation("/auth/login");
       return;
     }
-    
-    // For generic upgrade, itineraryId is not strictly needed or pass 0
+
+    // itineraryId: 0 is used for a generic (non-itinerary-specific) upgrade
     checkoutMutation.mutate({ data: { itineraryId: 0, productType: tier } }, {
       onSuccess: (res) => {
+        // Full-page redirect to Stripe Checkout
         window.location.href = res.url;
       }
     });
   };
 
+  /** Whether the user already owns a Premium purchase. */
   const isPremium = purchases?.some(p => p.productType === 'PREMIUM');
+  /** Whether the user already owns a Basic purchase. */
   const isBasic = purchases?.some(p => p.productType === 'BASIC');
 
   return (

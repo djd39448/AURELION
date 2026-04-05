@@ -1,3 +1,29 @@
+/**
+ * @module routes/index
+ * @description Central route aggregator for the AURELION API server.
+ *
+ * Mounts all route groups onto a single Express router that is then
+ * attached to the application at the `/api` prefix (see server bootstrap).
+ *
+ * ## Route groups and their base paths
+ *
+ * | Module        | Base path            | Auth required | Description                                    |
+ * |---------------|----------------------|---------------|------------------------------------------------|
+ * | health        | `/healthz`           | None          | Liveness probe for uptime monitors / LBs       |
+ * | auth          | `/auth/*`            | Varies        | Session-based authentication (register/login)   |
+ * | activities    | `/activities/*`      | None          | Public activity browsing and search             |
+ * | itineraries   | `/itineraries/*`     | Required      | User itinerary CRUD and item management         |
+ * | chat          | `/chat/*`            | Required      | AI concierge chat (Premium tier only)           |
+ * | purchases     | `/purchases/*`       | Required*     | Stripe checkout and webhook processing          |
+ * | admin         | `/admin/*`           | Admin only    | Activity management and URL ingestion           |
+ * | dashboard     | `/dashboard/*`       | Required      | Aggregate stats for the user dashboard          |
+ *
+ * *purchases/webhook is unauthenticated but verified via Stripe signature.
+ *
+ * @remarks
+ * Consumed by Paperclip AI agents programmatically. Each sub-router is
+ * self-contained and registers its own path prefixes.
+ */
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import authRouter from "./auth";

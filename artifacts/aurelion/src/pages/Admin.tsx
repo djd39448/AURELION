@@ -1,3 +1,26 @@
+/**
+ * @module pages/Admin
+ * @description Admin dashboard for managing AURELION platform content.
+ * Provides CRUD operations for activities and a URL auto-ingest tool
+ * that extracts activity data from provider websites.
+ *
+ * Access control:
+ *  - Auth guard via useEffect: redirects to / if the user is not authenticated
+ *    or does not have the "admin" role.
+ *  - Renders nothing (null) while the auth check is in progress.
+ *
+ * Features:
+ *  - Summary stat cards (total activities, role, access tier).
+ *  - "Auto-Ingest URL" tool: paste a provider URL, extract title/description/category,
+ *    then review and create an activity from the extracted data.
+ *  - Activity listing with inline edit and confirm-to-delete flows.
+ *  - "Add Activity" button for manual creation.
+ *
+ * @route /admin
+ * @auth Required (admin role only)
+ * @tier N/A (admins have full access)
+ */
+
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
@@ -16,6 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Globe, Plus, Trash2, Edit, X, Check, ChevronDown, ChevronUp, Users, BarChart2, Activity } from "lucide-react";
 
+/** All valid activity categories for the platform. Used in category dropdowns. */
 const CATEGORIES = [
   "Cliff & Vertical Adventures",
   "Off-Road Expeditions",
@@ -25,8 +49,10 @@ const CATEGORIES = [
   "Scenic Riding",
 ];
 
+/** All valid difficulty levels. Used in difficulty dropdowns. */
 const DIFFICULTIES = ["Easy", "Moderate", "Challenging", "Expert"];
 
+/** Shape of the activity form data used by both create and edit flows. */
 type ActivityFormData = {
   title: string;
   category: string;
@@ -39,6 +65,7 @@ type ActivityFormData = {
   imageUrl: string;
 };
 
+/** Default empty form values for creating a new activity. */
 const emptyForm: ActivityFormData = {
   title: "",
   category: CATEGORIES[0],
@@ -51,6 +78,14 @@ const emptyForm: ActivityFormData = {
   imageUrl: "",
 };
 
+/**
+ * Reusable activity form component used for both creating and editing activities.
+ *
+ * @param initial - Pre-populated form values (empty for create, existing data for edit).
+ * @param onSave - Callback invoked with the form data when the user clicks Save.
+ * @param onCancel - Callback invoked when the user clicks Cancel.
+ * @param saving - Whether a save operation is in progress (disables buttons).
+ */
 function ActivityForm({
   initial,
   onSave,
@@ -62,7 +97,9 @@ function ActivityForm({
   onCancel: () => void;
   saving: boolean;
 }) {
+  /** Local form state — initialised from the `initial` prop. */
   const [form, setForm] = useState<ActivityFormData>(initial);
+  /** Helper to update a single form field by key. */
   const set = (k: keyof ActivityFormData, v: string | number) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -130,32 +167,58 @@ function ActivityForm({
   );
 }
 
+/**
+ * Admin page component.
+ *
+ * @route /admin
+ * @auth Required (admin role)
+ * @tier N/A
+ */
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // -- Local UI state --
+  /** URL input for the auto-ingest tool. */
   const [url, setUrl] = useState("");
+  /** Result returned from the URL ingest API (title, description, suggestedCategory). */
   const [ingestResult, setIngestResult] = useState<{ title: string; description: string; rawText: string; suggestedCategory: string } | null>(null);
+  /** Whether the create-activity form is visible. */
   const [showCreate, setShowCreate] = useState(false);
+  /** ID of the activity currently being edited inline (null = none). */
   const [editingId, setEditingId] = useState<number | null>(null);
+  /** ID of the activity pending delete confirmation (null = none). */
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
+  // -- Queries & Mutations --
+  /** Query: current user (for admin role check). */
   const { data: user, isLoading: userLoading } = useGetMe();
+  /** Query: all activities (for the admin listing). */
   const { data: activities } = useListActivities();
+  /** Mutation: extract activity data from a provider URL. */
   const ingestMutation = useAdminIngestUrl();
+  /** Mutation: create a new activity. */
   const createMutation = useAdminCreateActivity();
+  /** Mutation: update an existing activity. */
   const updateMutation = useAdminUpdateActivity();
+  /** Mutation: delete an activity. */
   const deleteMutation = useAdminDeleteActivity();
 
+  /**
+   * Admin role guard.
+   * Once the user query resolves, if the user is not an admin, redirect to home.
+   */
   useEffect(() => {
     if (!userLoading && (!user?.isAuthenticated || user.role !== "admin")) {
       setLocation("/");
     }
   }, [user, userLoading, setLocation]);
 
+  // Render nothing until the auth check completes and confirms admin access
   if (userLoading || !user?.isAuthenticated || user.role !== "admin") return null;
 
+  /** Helper: invalidate the activities list cache after any CUD operation. */
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
 
   const handleIngest = (e: React.FormEvent) => {

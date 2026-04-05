@@ -1,3 +1,25 @@
+/**
+ * @module routes/purchases
+ * @description Stripe payment and checkout routes for AURELION tier upgrades.
+ *
+ * ## Pricing tiers (in cents)
+ * - **BASIC** — 999 cents ($9.99): "Structured Itinerary Plan" — export + booking info
+ * - **PREMIUM** — 4999 cents ($49.99): "Concierge Intelligence Plan" — AI chat + insider tips
+ *
+ * ## Stripe integration
+ * - The `stripe` client is instantiated only when `STRIPE_SECRET_KEY` is set.
+ * - When null (no key), the system operates in **mock mode**: checkout instantly
+ *   creates a "completed" purchase and upgrades the itinerary tier, bypassing Stripe.
+ * - Mock mode is useful for development/staging without a real Stripe account.
+ *
+ * ## App URL resolution (for Stripe redirect URLs)
+ * Fallback chain: `NEXT_PUBLIC_APP_URL` -> first `REPLIT_DOMAINS` entry -> `"localhost"`
+ *
+ * ## Security
+ * - The webhook endpoint verifies Stripe signatures via `STRIPE_WEBHOOK_SECRET`
+ *   to prevent spoofed payment confirmations.
+ * - Without a valid signature, the webhook returns 400.
+ */
 import { Router } from "express";
 import { db, purchasesTable, itinerariesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
@@ -8,15 +30,32 @@ import Stripe from "stripe";
 
 const router = Router();
 
+/**
+ * Stripe client instance. Null when STRIPE_SECRET_KEY is not configured,
+ * which activates mock/development mode for all payment flows.
+ */
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null;
 
+/**
+ * Tier pricing in cents (USD). Used for Stripe line items and mock purchases.
+ * BASIC = $9.99, PREMIUM = $49.99.
+ */
 const PRICES: Record<string, number> = {
   BASIC: 999,
   PREMIUM: 4999,
 };
 
+/**
+ * @route GET /api/purchases
+ * @auth Required
+ * @returns {Array<Purchase>} User's purchase history ordered by `createdAt` ascending.
+ *   Each purchase includes: id, userId, itineraryId, productType, amount, status,
+ *   stripeSessionId, createdAt (ISO 8601).
+ * @throws {401} Unauthorized
+ * @throws {500} Internal server error
+ */
 router.get("/purchases", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -34,6 +73,32 @@ router.get("/purchases", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * @route POST /api/purchases/checkout
+ * @auth Required
+ * @body {CreateCheckoutBody} — `{ itineraryId: number, productType: "BASIC" | "PREMIUM" }`
+ * @returns {{ url: string }} Redirect URL — either a Stripe Checkout session URL
+ *   (production) or a direct dashboard success URL (mock mode).
+ * @throws {400} Zod validation failure or invalid productType
+ * @throws {401} Unauthorized
+ * @throws {404} Itinerary not found (or belongs to another user)
+ * @throws {500} Internal server error / Stripe API failure
+ *
+ * @description Creates a Stripe Checkout Session for the specified tier upgrade.
+ *
+ * ## Flow (Stripe mode — `stripe` is not null):
+ * 1. Validates body and verifies itinerary ownership.
+ * 2. Creates a Stripe Checkout Session with `metadata` containing userId, itineraryId, productType.
+ * 3. Inserts a purchase record with status "pending".
+ * 4. Returns the Stripe-hosted checkout URL for the client to redirect to.
+ * 5. Stripe calls the webhook on completion to finalize the purchase.
+ *
+ * ## Flow (mock mode — no STRIPE_SECRET_KEY):
+ * 1. Validates body and verifies itinerary ownership.
+ * 2. Immediately inserts a "completed" purchase with a mock session ID.
+ * 3. Immediately upgrades the itinerary's `tierType` to the purchased product.
+ * 4. Returns the dashboard success URL directly.
+ */
 router.post("/purchases/checkout", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -108,13 +173,33 @@ router.post("/purchases/checkout", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * @route POST /api/purchases/webhook
+ * @auth None — authenticated via Stripe webhook signature verification
+ * @body {Buffer} Raw request body (must NOT be JSON-parsed; requires raw body middleware)
+ * @returns {{ received: true }} Acknowledgment to Stripe
+ * @throws {400} Missing signature header or signature verification failure
+ *
+ * @description Stripe webhook handler for asynchronous payment confirmation.
+ *
+ * ## Handled events:
+ * - `checkout.session.completed` — Updates the purchase record to "completed"
+ *   and upgrades the itinerary's `tierType` to the purchased product.
+ *
+ * ## Security:
+ * - Verifies the `stripe-signature` header against `STRIPE_WEBHOOK_SECRET`.
+ * - If either `stripe` client or `STRIPE_WEBHOOK_SECRET` is missing, the
+ *   webhook is a no-op (returns `{ received: true }` immediately).
+ * - Metadata (userId, itineraryId, productType) is extracted from the
+ *   Stripe session object to identify which records to update.
+ */
 router.post("/purchases/webhook", async (req, res): Promise<void> => {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
     res.json({ received: true });
     return;
   }
   const sig = req.headers["stripe-signature"];
-  if (!sig) { res.status(400).json({ error: "No signature" }); return; }
+  if (!sig || Array.isArray(sig)) { res.status(400).json({ error: "No signature" }); return; }
   try {
     const event = stripe.webhooks.constructEvent(
       req.body as Buffer,

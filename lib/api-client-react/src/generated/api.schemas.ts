@@ -73,6 +73,7 @@ export interface UserSession {
   name?: string;
   email?: string;
   role?: string;
+  tier?: string;
   isAuthenticated: boolean;
 }
 
