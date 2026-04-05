@@ -22,7 +22,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { useParams, useLocation, Link } from "wouter";
+import { useParams, Link } from "wouter";
 import {
   useGetChatMessages,
   useSendChatMessage,
@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, User, Sparkles, ChevronLeft } from "lucide-react";
 import { PremiumLockEnhanced } from "@/components/ui/premium-lock-enhanced";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Chat page component (AI Concierge).
@@ -50,6 +51,7 @@ export default function Chat() {
   const [content, setContent] = useState("");
   /** Ref to the scroll container — used to auto-scroll to the latest message. */
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   /** Query: current user profile (for tier check). */
   const { data: user } = useGetMe();
@@ -97,7 +99,14 @@ export default function Chat() {
           setContent("");
           // Refetch to get both the sent message and the AI's response
           refetch();
-        }
+        },
+        onError: () => {
+          toast({
+            title: "Message failed",
+            description: "Could not send message. Please try again.",
+            variant: "destructive",
+          });
+        },
       }
     );
   };

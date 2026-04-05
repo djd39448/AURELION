@@ -59,12 +59,6 @@ export default function ActivityDetail() {
     userTier === "premium" ||
     user?.role === "admin" ||
     purchases?.some((p) => p.productType === "PREMIUM");
-  /** True if user has at least Basic access (includes Premium). */
-  const isBasicOrPremium =
-    isPremium ||
-    userTier === "basic" ||
-    purchases?.some((p) => p.productType === "BASIC");
-
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -208,7 +202,7 @@ export default function ActivityDetail() {
                 <PremiumLockEnhanced
                   title="Unlock Insider Intelligence"
                   description="Get exact booking guides, provider direct contacts, and insider tips from our luxury concierge team."
-                  preview={activity.basicBookingGuide?.slice(0, 100) + "..."}
+                  preview={activity.basicBookingGuide ? activity.basicBookingGuide.slice(0, 100) + "..." : undefined}
                   features={[
                     "Complete booking guide with best times",
                     "Direct provider contact information",

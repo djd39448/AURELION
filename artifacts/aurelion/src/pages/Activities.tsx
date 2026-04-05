@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MapPin, Clock, DollarSign, SlidersHorizontal, X } from "lucide-react";
+import { Search, MapPin, Clock, SlidersHorizontal, X } from "lucide-react";
 import { PremiumLock } from "@/components/ui/premium-lock";
 import { getImageUrl } from "@/lib/image-url";
 
