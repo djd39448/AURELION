@@ -20,11 +20,13 @@
  *   the database, enabling development/testing without an OpenAI account.
  */
 import { Router } from "express";
-import { db, chatSessionsTable, chatMessagesTable, activitiesTable, itinerariesTable, itineraryItemsTable } from "@workspace/db";
+import { db, chatSessionsTable, chatMessagesTable, activitiesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { CreateChatSessionBody, GetChatMessagesParams, SendChatMessageParams, SendChatMessageBody } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 import { canUseAIChat } from "../lib/entitlements";
+import { logger } from "../lib/logger";
+import { buildConciergeSystemPrompt } from "../lib/ai-concierge-prompt";
 import OpenAI from "openai";
 
 const router = Router();
@@ -189,36 +191,12 @@ router.post("/chat/sessions/:sessionId/messages", async (req, res): Promise<void
       content: parsed.data.content,
     });
 
-    const activities = await db.select({
-      id: activitiesTable.id,
-      title: activitiesTable.title,
-      category: activitiesTable.category,
-      description: activitiesTable.description,
-      priceLow: activitiesTable.priceLow,
-      priceHigh: activitiesTable.priceHigh,
-      durationMinutes: activitiesTable.durationMinutes,
-      difficulty: activitiesTable.difficulty,
-      location: activitiesTable.location,
-      bestTimeOfDay: activitiesTable.bestTimeOfDay,
-    }).from(activitiesTable);
+    // Build rich system prompt with all vendor intelligence + activity catalog
+    const systemPrompt = await buildConciergeSystemPrompt();
 
     const history = await db.select().from(chatMessagesTable)
       .where(eq(chatMessagesTable.sessionId, params.data.sessionId))
       .orderBy(chatMessagesTable.createdAt);
-
-    const systemPrompt = `You are a luxury Aruba adventure concierge for AURELION.
-
-Help users:
-- build itineraries
-- optimize timing
-- choose experiences
-- avoid mistakes
-
-Only use activities from this database:
-${JSON.stringify(activities, null, 2)}
-
-Never invent provider details or activities not in this list.
-Be concise, structured, and confident. Use markdown formatting.`;
 
     const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
       { role: "system", content: systemPrompt },
@@ -235,9 +213,18 @@ Be concise, structured, and confident. Use markdown formatting.`;
         model: "gpt-4o-mini",
         messages,
         max_tokens: 800,
+        temperature: 0.7,
       });
       aiContent = completion.choices[0]?.message?.content ?? aiContent;
+      logger.info({ sessionId: params.data.sessionId, tokens: completion.usage }, "AI concierge response");
     } else {
+      // Mock mode: suggest first 3 activities from DB
+      const activities = await db.select({
+        title: activitiesTable.title,
+        category: activitiesTable.category,
+        priceLow: activitiesTable.priceLow,
+        priceHigh: activitiesTable.priceHigh,
+      }).from(activitiesTable);
       aiContent = `I'd love to help you plan your Aruba adventure! Based on our activities, here are some suggestions:\n\n${activities.slice(0, 3).map(a => `**${a.title}** — ${a.category}, ~$${a.priceLow}-${a.priceHigh}`).join("\n")}\n\nWould you like me to build an itinerary around any of these?`;
     }
 
@@ -251,6 +238,139 @@ Be concise, structured, and confident. Use markdown formatting.`;
   } catch (err) {
     req.log.error({ err }, "Error sending message");
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * @route POST /api/chat/sessions/:sessionId/messages/stream
+ * @auth Required
+ * @tier PREMIUM — entitlement re-checked on every message send
+ * @body {SendChatMessageBody} — `{ content: string }`
+ * @returns Server-Sent Events stream of AI response chunks.
+ *   Each event is `data: {"content":"..."}\n\n` or `data: {"done":true}\n\n`.
+ *   On error: `data: {"error":"..."}\n\n`.
+ *
+ * @description Streams the AI concierge response token-by-token using SSE.
+ * Saves both user message and completed AI response to the database.
+ * Falls back to a simulated streaming mock when OPENAI_API_KEY is absent.
+ */
+router.post("/chat/sessions/:sessionId/messages/stream", async (req, res): Promise<void> => {
+  const user = requireAuth(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const aiAllowed = await canUseAIChat(user.id);
+  if (!aiAllowed) { res.status(403).json({ error: "Premium required" }); return; }
+
+  const params = SendChatMessageParams.safeParse({ sessionId: Number(req.params.sessionId) });
+  if (!params.success) { res.status(400).json({ error: "Invalid session id" }); return; }
+  const parsed = SendChatMessageBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  try {
+    // Verify session ownership
+    const [session] = await db.select().from(chatSessionsTable)
+      .where(and(eq(chatSessionsTable.id, params.data.sessionId), eq(chatSessionsTable.userId, user.id)));
+    if (!session) { res.status(404).json({ error: "Session not found" }); return; }
+
+    // Persist user message
+    await db.insert(chatMessagesTable).values({
+      sessionId: params.data.sessionId,
+      role: "user",
+      content: parsed.data.content,
+    });
+
+    // SSE headers
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+
+    // --- MOCK MODE ---
+    if (!openai) {
+      logger.warn("OpenAI API key not set — using mock streaming response");
+
+      const activities = await db.select({
+        title: activitiesTable.title,
+        category: activitiesTable.category,
+        priceLow: activitiesTable.priceLow,
+        priceHigh: activitiesTable.priceHigh,
+      }).from(activitiesTable);
+
+      const mockResponse = `I'd love to help plan your Aruba adventure!\n\nHere are some top picks:\n\n${activities
+        .slice(0, 3)
+        .map((a) => `**${a.title}** — ${a.category}, ~$${a.priceLow}–$${a.priceHigh}`)
+        .join("\n\n")}\n\nWould you like details on any of these?`;
+
+      // Simulate token-by-token streaming
+      const words = mockResponse.split(" ");
+      for (const word of words) {
+        res.write(`data: ${JSON.stringify({ content: word + " " })}\n\n`);
+        await new Promise((r) => setTimeout(r, 40));
+      }
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+
+      await db.insert(chatMessagesTable).values({
+        sessionId: params.data.sessionId,
+        role: "assistant",
+        content: mockResponse,
+      });
+      return;
+    }
+
+    // --- REAL STREAMING MODE ---
+    const systemPrompt = await buildConciergeSystemPrompt();
+
+    const history = await db.select().from(chatMessagesTable)
+      .where(eq(chatMessagesTable.sessionId, params.data.sessionId))
+      .orderBy(chatMessagesTable.createdAt);
+
+    const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+      { role: "system", content: systemPrompt },
+      ...history.map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
+    ];
+
+    const stream = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages,
+      max_tokens: 800,
+      temperature: 0.7,
+      stream: true,
+    });
+
+    let fullResponse = "";
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) {
+        fullResponse += content;
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
+
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+
+    // Persist complete AI response
+    await db.insert(chatMessagesTable).values({
+      sessionId: params.data.sessionId,
+      role: "assistant",
+      content: fullResponse,
+    });
+
+    logger.info({ sessionId: params.data.sessionId, length: fullResponse.length }, "AI response streamed");
+
+  } catch (error) {
+    logger.error({ error }, "Error streaming chat message");
+    // Try to send error via SSE if headers already sent, otherwise JSON
+    if (res.headersSent) {
+      res.write(`data: ${JSON.stringify({ error: "Failed to get AI response. Please try again." })}\n\n`);
+      res.end();
+    } else {
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
 });
 
