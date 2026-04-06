@@ -228,6 +228,7 @@ export default function Admin() {
       { data: { url } },
       {
         onSuccess: (data) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Orval ingest response type is opaque; cast to display extracted fields
           setIngestResult(data as any);
           setUrl("");
         },
@@ -238,6 +239,7 @@ export default function Admin() {
 
   const handleCreate = (form: ActivityFormData) => {
     createMutation.mutate(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ActivityFormData omits tags; Orval expects full CreateActivityBody
       { data: { ...form, tags: [] } as any },
       {
         onSuccess: () => {
@@ -253,6 +255,7 @@ export default function Admin() {
 
   const handleUpdate = (id: number, form: ActivityFormData) => {
     updateMutation.mutate(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ActivityFormData subset of UpdateActivityBody; Orval types are strict
       { id, data: form as any },
       {
         onSuccess: () => {

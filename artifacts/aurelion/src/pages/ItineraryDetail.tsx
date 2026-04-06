@@ -134,6 +134,7 @@ export default function ItineraryDetail() {
     setExporting(true);
     try {
       const data = await exportItinerary(id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Orval export response type doesn't match printItineraryPDF's ItineraryExportData shape exactly
       printItineraryPDF(data as any);
       toast({ title: "PDF opened — choose 'Save as PDF' in the print dialog" });
     } catch {

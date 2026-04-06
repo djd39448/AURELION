@@ -13,6 +13,7 @@
 
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { getImageUrl } from "@/lib/image-url";
 
 /**
  * About page component.
@@ -26,8 +27,8 @@ export default function About() {
     <div className="w-full">
       {/* Hero */}
       <div className="relative h-[50vh] min-h-[400px] flex items-center justify-center">
-        <img 
-          src="/about-hero.png" 
+        <img
+          src={getImageUrl("/about-hero.png")}
           alt="Aurelion Concierge"
           className="absolute inset-0 w-full h-full object-cover"
         />

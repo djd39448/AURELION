@@ -26,7 +26,7 @@ const router: IRouter = Router();
  * // Response
  * { "status": "ok" }
  */
-router.get("/healthz", (_req, res) => {
+router.get("/healthz", (_req, res): void => {
   const data = HealthCheckResponse.parse({ status: "ok" });
   res.json(data);
 });

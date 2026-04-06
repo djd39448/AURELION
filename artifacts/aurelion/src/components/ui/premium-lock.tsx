@@ -1,14 +1,33 @@
+/**
+ * @module components/ui/premium-lock
+ * @description Simple premium feature gate with blurred background content.
+ * Renders a lock icon overlay with an upgrade CTA over blurred child content
+ * (or a skeleton placeholder). Used for teaser content behind paywalls on
+ * activity detail pages and the itinerary builder.
+ *
+ * For a more conversion-focused gate with feature lists and price anchoring,
+ * see {@link PremiumLockEnhanced}.
+ */
+
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { ReactNode } from "react";
 
 interface PremiumLockProps {
+  /** Gate title displayed below the lock icon. */
   title?: string;
+  /** Descriptive text explaining what's behind the gate. */
   description?: string;
+  /** Optional child content rendered blurred behind the overlay. */
   children?: ReactNode;
 }
 
+/**
+ * Premium content gate component.
+ * Displays a lock overlay with upgrade CTA. Child content is rendered
+ * blurred and non-interactive behind the overlay.
+ */
 export function PremiumLock({ 
   title = "Concierge Intelligence", 
   description = "Unlock insider tips, premium booking guides, and AI concierge planning with Aurelion Premium.",

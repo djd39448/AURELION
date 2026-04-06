@@ -7,7 +7,6 @@
  * This is a purely presentational component with no data fetching or state.
  */
 
-import { Navbar } from "./Navbar";
 import { Link } from "wouter";
 import { Compass } from "lucide-react";
 

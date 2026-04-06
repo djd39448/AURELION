@@ -24,7 +24,12 @@ const COMPRESSION_THRESHOLD = 10;
 const KEEP_RECENT = 5;
 
 /**
- * Rough token estimator: ~4 characters per token for English text.
+ * Estimates the token count for English text.
+ * Uses a rough approximation of ~4 characters per token, which is
+ * close to the OpenAI tokenizer average for conversational English.
+ *
+ * @param text - The text to estimate tokens for.
+ * @returns Estimated token count (rounded up).
  */
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
@@ -67,7 +72,10 @@ export async function maybeCompressSession(sessionId: number): Promise<boolean> 
 
   // Get existing compressed history (to append to)
   const [session] = await db
-    .select({ compressedHistory: chatSessionsTable.compressedHistory })
+    .select({
+      compressedHistory: chatSessionsTable.compressedHistory,
+      compressionCount: chatSessionsTable.compressionCount,
+    })
     .from(chatSessionsTable)
     .where(eq(chatSessionsTable.id, sessionId));
 
@@ -139,7 +147,7 @@ export async function maybeCompressSession(sessionId: number): Promise<boolean> 
     .set({
       compressedHistory: newSummary,
       lastCompressedAt: new Date(),
-      compressionCount: (session?.compressedHistory ? 1 : 0) + 1,
+      compressionCount: (session?.compressionCount ?? 0) + 1,
     })
     .where(eq(chatSessionsTable.id, sessionId));
 

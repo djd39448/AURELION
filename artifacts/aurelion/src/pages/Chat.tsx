@@ -35,6 +35,9 @@ import { Send, User, Sparkles, ChevronLeft } from "lucide-react";
 import { PremiumLockEnhanced } from "@/components/ui/premium-lock-enhanced";
 import { useToast } from "@/hooks/use-toast";
 
+/** Number of verified Aruba vendors in the database. */
+const VENDOR_COUNT = 11;
+
 /** Suggested first questions to reduce blank-conversation anxiety. */
 const STARTER_QUESTIONS = [
   "What are the best snorkel tours for families?",
@@ -278,7 +281,7 @@ export default function Chat() {
               </h3>
               <p className="text-muted-foreground font-light max-w-md mx-auto mb-8">
                 I'm your personal Aruba planning assistant with insider knowledge
-                on {11} verified vendors. How can I help?
+                on {VENDOR_COUNT} verified vendors. How can I help?
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
                 {STARTER_QUESTIONS.map((q) => (

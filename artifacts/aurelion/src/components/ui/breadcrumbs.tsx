@@ -30,6 +30,12 @@ interface BreadcrumbsProps {
   showHome?: boolean;
 }
 
+/**
+ * Breadcrumb navigation component.
+ *
+ * @param items - Array of breadcrumb items (label + optional href).
+ * @param showHome - Whether to show the Home icon as the first crumb. Defaults to `true`.
+ */
 export function Breadcrumbs({ items, showHome = true }: BreadcrumbsProps) {
   return (
     <nav className="flex items-center gap-2 text-sm mb-6 overflow-x-auto">
