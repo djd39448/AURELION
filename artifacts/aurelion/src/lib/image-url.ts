@@ -29,3 +29,32 @@ export function getImageUrl(url: string | null | undefined): string | undefined 
   }
   return url;
 }
+
+/**
+ * Category-to-placeholder mapping. Each category has a matching static image
+ * in `public/` that serves as a visually appropriate fallback.
+ */
+const CATEGORY_PLACEHOLDERS: Record<string, string> = {
+  "Cliff & Vertical Adventures": "/category-cliff.png",
+  "Off-Road Expeditions": "/category-offroad.png",
+  "Ocean Exploration": "/category-ocean.png",
+  "Wild Terrain & Natural Wonders": "/category-wild.png",
+  "Water & Wind Sports": "/category-water.png",
+  "Scenic Riding": "/category-riding.png",
+};
+
+/**
+ * Returns the activity image URL, falling back to a category-specific
+ * placeholder when no image is available.
+ */
+export function getActivityImageUrl(
+  imageUrl: string | null | undefined,
+  category?: string | null,
+): string {
+  const resolved = getImageUrl(imageUrl);
+  if (resolved) return resolved;
+  if (category && CATEGORY_PLACEHOLDERS[category]) {
+    return getImageUrl(CATEGORY_PLACEHOLDERS[category])!;
+  }
+  return getImageUrl("/category-ocean.png")!;
+}

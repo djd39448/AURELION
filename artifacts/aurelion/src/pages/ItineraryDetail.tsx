@@ -39,7 +39,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Clock, Download, MapPin, Plus, Trash2 } from "lucide-react";
 import { PremiumLock } from "@/components/ui/premium-lock";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { getImageUrl } from "@/lib/image-url";
+import { getActivityImageUrl } from "@/lib/image-url";
 
 /**
  * ItineraryDetail page component (itinerary builder).
@@ -297,15 +297,13 @@ export default function ItineraryDetail() {
                         key={activity.id}
                         className="flex border border-border rounded-lg overflow-hidden bg-background"
                       >
-                        {activity.imageUrl && (
-                          <div className="w-20 md:w-32 shrink-0">
-                            <img
-                              src={getImageUrl(activity.imageUrl)}
-                              alt={activity.title}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
+                        <div className="w-20 md:w-32 shrink-0">
+                          <img
+                            src={getActivityImageUrl(activity.imageUrl, activity.category)}
+                            alt={activity.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                         <div className="p-3 md:p-4 flex-1 flex flex-col justify-between min-w-0">
                           <div>
                             <h4 className="font-serif text-base md:text-lg mb-1 truncate">
@@ -365,15 +363,13 @@ export default function ItineraryDetail() {
                         key={item.id}
                         className="flex border border-border bg-card rounded-lg overflow-hidden group"
                       >
-                        {item.activity?.imageUrl && (
-                          <div className="w-24 sm:w-32 md:w-48 shrink-0 relative">
-                            <img
-                              src={getImageUrl(item.activity.imageUrl)}
-                              alt={item.activity.title}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
+                        <div className="w-24 sm:w-32 md:w-48 shrink-0 relative">
+                          <img
+                            src={getActivityImageUrl(item.activity?.imageUrl, item.activity?.category)}
+                            alt={item.activity?.title ?? "Activity"}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                         <div className="p-4 md:p-6 flex-1 flex flex-col justify-between min-w-0">
                           <div>
                             <div className="flex justify-between items-start gap-2">

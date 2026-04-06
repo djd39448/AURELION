@@ -26,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, MapPin, Clock, SlidersHorizontal, X } from "lucide-react";
 import { PremiumLock } from "@/components/ui/premium-lock";
-import { getImageUrl } from "@/lib/image-url";
+import { getActivityImageUrl } from "@/lib/image-url";
 
 /**
  * Activities directory page component.
@@ -209,15 +209,11 @@ export default function Activities() {
                 >
                   <Link href={`/activities/${activity.id}`}>
                     <div className="relative aspect-[4/3] overflow-hidden">
-                      {activity.imageUrl ? (
-                        <img
-                          src={getImageUrl(activity.imageUrl)}
-                          alt={activity.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-muted"></div>
-                      )}
+                      <img
+                        src={getActivityImageUrl(activity.imageUrl, activity.category)}
+                        alt={activity.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
                       <div className="absolute top-4 left-4 flex gap-2">
                         <span className="bg-background/80 backdrop-blur text-foreground text-xs uppercase tracking-widest px-3 py-1 font-serif">
                           {activity.category}

@@ -24,7 +24,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, DollarSign, Activity as ActivityIcon, Info, Shield, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getImageUrl } from "@/lib/image-url";
+import { getActivityImageUrl } from "@/lib/image-url";
 
 /**
  * ActivityDetail page component.
@@ -82,7 +82,7 @@ export default function ActivityDetail() {
       {/* Hero */}
       <div className="relative h-[50vh] md:h-[60vh] min-h-[360px]">
         <img
-          src={getImageUrl(activity.imageUrl) || getImageUrl("/category-cliff.png")}
+          src={getActivityImageUrl(activity.imageUrl, activity.category)}
           alt={activity.title}
           className="w-full h-full object-cover"
         />

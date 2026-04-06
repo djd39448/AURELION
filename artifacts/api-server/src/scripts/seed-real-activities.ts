@@ -81,7 +81,7 @@ async function seed() {
       priceLow: 130,        // "From $130" on website
       priceHigh: 130,
       location: "Island-wide (Natural Pool, Baby Beach, Arikok)",
-      imageUrl: null,
+      imageUrl: "/activities/jeep-safari.png",
       reviewSummary:
         "TripAdvisor #1 Caribbean Experience with 42,000+ reviews. Guides praised as knowledgeable, personable, and entertaining. Water, soda, and snacks provided on return journey.",
       whatToBring: "Swimsuit, water shoes, sunscreen, sunglasses, camera. Water and snacks provided.",
@@ -118,7 +118,7 @@ async function seed() {
       priceLow: 310,        // "From $310" on website — price is per vehicle
       priceHigh: 310,
       location: "Coastal route to Natural Pool",
-      imageUrl: null,
+      imageUrl: "/activities/atv-expedition.png",
       reviewSummary:
         "Adrenaline-packed self-drive experience. Cliff jumping at the Natural Pool is a highlight. UTV insurance recommended — tire repair costs $350 without it.",
       whatToBring: "Closed-toe shoes mandatory, bandana for dust, sunglasses, sunscreen, swimsuit for Natural Pool.",
@@ -155,7 +155,7 @@ async function seed() {
       priceLow: 240,        // "From $240" on website
       priceHigh: 240,
       location: "Northern Aruba Gold Coast",
-      imageUrl: null,
+      imageUrl: "/activities/atv-expedition.png",
       reviewSummary:
         "Great option for the northern half of the island. California Lighthouse is a photo highlight. Shorter and cheaper than the Natural Pool UTV tour.",
       whatToBring: "Closed-toe shoes, bandana/buff, sunglasses, sunscreen, camera.",
@@ -197,7 +197,7 @@ async function seed() {
       priceLow: 97,         // "From $97.00" on website
       priceHigh: 97,
       location: "Northern Aruba landmarks",
-      imageUrl: null,
+      imageUrl: "/activities/jeep-safari.png",
       reviewSummary:
         "Great value alternative to ABC Tours. Covers similar landmarks at $33 less. Good for budget-conscious travelers and cruise passengers.",
       whatToBring: "Swimsuit, sunscreen, camera, comfortable shoes.",
@@ -239,7 +239,7 @@ async function seed() {
       priceLow: 99,         // "From $99" on website
       priceHigh: 99,
       location: "Antilla Shipwreck, Boca Catalina, Arashi Reef",
-      imageUrl: null,
+      imageUrl: "/activities/catamaran-snorkel.jpg",
       reviewSummary:
         "9.4/10 rating from 147 verified reviews. Clean boat, phenomenal crew. Morning tour visits 3 snorkel sites with lunch — best value. Afternoon visits 2 sites.",
       whatToBring: "Bathing suit, towel, sunblock, camera, comfortable walking shoes. Snorkel gear provided.",
@@ -276,7 +276,7 @@ async function seed() {
       priceLow: 49,         // "From $49" on website
       priceHigh: 49,
       location: "Antilla Shipwreck, Arashi Reef",
-      imageUrl: null,
+      imageUrl: "/activities/glass-bottom-boat.jpg",
       reviewSummary:
         "Great option for non-swimmers, elderly guests, or young children. Air-conditioned comfort with views of the famous WWII wreck.",
       whatToBring: "Camera. No swim gear needed — you stay dry inside the boat.",
@@ -318,7 +318,7 @@ async function seed() {
       priceLow: 72,         // "From $72" on website
       priceHigh: 72,
       location: "West coast — 3 snorkel sites including Antilla Wreck",
-      imageUrl: null,
+      imageUrl: "/activities/champagne-brunch-cruise.jpg",
       reviewSummary:
         "Best value snorkel tour in Aruba — 3 sites + champagne brunch for less than De Palm's standard tour. Crew described as kind, helpful, and fun. Guests report spotting sea turtles.",
       whatToBring: "Swimsuit, towel, sunscreen, camera. Snorkel gear provided.",
@@ -355,7 +355,7 @@ async function seed() {
       priceLow: 50,         // "From $50" on website
       priceHigh: 50,
       location: "West coast — 2 snorkel sites",
-      imageUrl: null,
+      imageUrl: "/activities/afternoon-sailing.jpg",
       reviewSummary:
         "Cheapest catamaran snorkel in Aruba at $50. Shorter than morning options but great value for budget travelers or those with limited time.",
       whatToBring: "Swimsuit, towel, sunscreen. Snorkel gear provided.",
@@ -397,7 +397,7 @@ async function seed() {
       priceLow: 98,         // "From $98" on website
       priceHigh: 98,
       location: "MooMba Beach to Antilla Wreck & 2 reef sites",
-      imageUrl: null,
+      imageUrl: "/activities/pirate-ship-snorkel.jpg",
       reviewSummary:
         "10/10 from reviewers. Rope swing is a huge hit. Crew described as amazing and a blast. Most popular tour — marked as 'Most Popular' on their website.",
       whatToBring: "Swimsuit, towel, sunscreen. Snorkel gear provided.",
@@ -434,7 +434,7 @@ async function seed() {
       priceLow: 54,         // Youth price from website
       priceHigh: 76,        // Adult price from website
       location: "MooMba Beach to Antilla Wreck & Boca Catalina",
-      imageUrl: null,
+      imageUrl: "/activities/pirate-ship-snorkel.jpg",
       reviewSummary:
         "Good budget option. Same rope swing and open bar as morning, just fewer snorkel stops and no BBQ.",
       whatToBring: "Swimsuit, towel, sunscreen. Snorkel gear provided.",
@@ -476,7 +476,7 @@ async function seed() {
       priceLow: 65,         // $65 confirmed
       priceHigh: 65,
       location: "Aruba west coast snorkel sites",
-      imageUrl: null,
+      imageUrl: "/activities/catamaran-party.jpg",
       reviewSummary:
         "Cheapest catamaran snorkel in Aruba. Rope swing AND water slide on board. Crew gets praised for great energy across hundreds of 5-star reviews.",
       whatToBring: "Swimsuit, towel, sunscreen. Snorkel gear provided.",
@@ -513,7 +513,7 @@ async function seed() {
       priceLow: 75,         // $75 confirmed
       priceHigh: 75,
       location: "Palm Beach",
-      imageUrl: null,
+      imageUrl: "/activities/parasailing.png",
       reviewSummary:
         "Incredible aerial views of Palm Beach and the high-rise hotel strip. Quick and thrilling — great add-on activity.",
       whatToBring: "Camera with strap (or leave valuables on boat). Comfortable clothes.",
@@ -555,7 +555,7 @@ async function seed() {
       priceLow: 130,        // US$130 + 7% tax confirmed on website
       priceHigh: 130,
       location: "Boroncana countryside to Northeast Coast hilltop",
-      imageUrl: null,
+      imageUrl: "/activities/horseback-beach.png",
       reviewSummary:
         "TripAdvisor top-rated horseback experience. Small personalized groups, friendly multi-lingual guides. The hilltop sunset views are breathtaking.",
       whatToBring: "Long pants, closed-toe shoes (boots ideal), light jacket for after sunset. Helmets provided.",
@@ -592,7 +592,7 @@ async function seed() {
       priceLow: 105,        // US$105 + 7% tax confirmed
       priceHigh: 105,
       location: "Boroncana countryside to Hidden Lagoon",
-      imageUrl: null,
+      imageUrl: "/activities/horseback-beach.png",
       reviewSummary:
         "Perfect intro ride for families and first-timers. Gentle horses, beautiful countryside, and the hidden lagoon is a nice surprise.",
       whatToBring: "Long pants, closed-toe shoes, sunscreen, camera. Helmets provided.",
@@ -635,7 +635,7 @@ async function seed() {
       priceLow: 0,          // UNKNOWN — not listed on website. Set to 0 to indicate unavailable.
       priceHigh: 0,
       location: "Fisherman's Huts Beach / Sarah Quita Beach",
-      imageUrl: null,
+      imageUrl: "/activities/kitesurfing.png",
       reviewSummary:
         "IKO-certified instruction at the best kitesurfing location in the Caribbean. Waist-deep water makes falls safe. Multi-day packages recommended for progression. Facilities include showers, lockers, WiFi, and rooftop lounge.",
       whatToBring: "Swimsuit, rash guard, reef-safe sunscreen, water. All kite equipment provided.",

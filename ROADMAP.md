@@ -1,8 +1,8 @@
 # AURELION ROADMAP & VISION
 
 **Last Updated:** 2026-04-05
-**Current Phase:** MVP — Local Development Complete, Pre-Launch
-**Next Milestone:** Public Beta with Real Vendor Data
+**Current Phase:** MVP — Feature-Complete, Pre-Launch Polish
+**Next Milestone:** Stripe Integration + Public Beta Deployment
 
 ---
 
@@ -100,23 +100,28 @@ to Aruba, here's $10 for a better plan."
   Vite PORT/BASE_PATH defaults, API proxy config, dotenv loading via Node 24 `--env-file`
 - **Files:** `.env`, `.env.example`, `dev.bat`
 
-#### Database Schema (8 tables, all migrated to Supabase)
+#### Database Schema (9 tables, all migrated to Supabase)
 
 | Table | Rows | Purpose |
 |-------|------|---------|
-| `users` | 1 | Auth accounts (bcrypt hashes, role, tier) |
+| `users` | 1 | Auth accounts (bcrypt hashes, role, tier, AI index cache) |
 | `providers` | 11 | Real Aruba tour vendors with intelligence data |
-| `activities` | 15 | Real tours with verified prices from vendor websites |
+| `activities` | 15 | Real tours with verified prices + hero images from vendor websites |
 | `itineraries` | 1 | User trip plans (title, days, tier, status) |
 | `itinerary_items` | 0 | Activities placed in itinerary day/time slots |
 | `purchases` | 0 | Stripe payment records (pending/completed) |
-| `chat_sessions` | 0 | AI concierge conversation containers |
-| `chat_messages` | 0 | Individual chat messages (user/assistant roles) |
+| `chat_sessions` | — | AI concierge conversation containers (with compression metadata) |
+| `chat_messages` | — | Individual chat messages (user/assistant roles, token counts, archival) |
+| `user_memories` | — | Semantic memory storage with embeddings (preferences, details, concerns) |
 
-- **Schema file:** `lib/db/src/schema/` (7 files, heavily annotated with JSDoc)
+- **Schema file:** `lib/db/src/schema/` (8 files, heavily annotated with JSDoc)
 - **Push command:** `pnpm --filter @workspace/db run push`
 - **No FK constraints** at DB level (enforced in application code) — intentional
   decision for flexibility during MVP. Revisit in Phase 2.
+- **New since initial build:** `user_memories` table with embedding support
+  (1536-dim vectors via `text-embedding-3-small`), `chat_sessions` compression
+  fields (`compressedHistory`, `lastCompressedAt`, `compressionCount`),
+  `chat_messages` archival fields (`isArchived`, `tokenCount`).
 
 #### Vendor Intelligence System (11 Real Vendors)
 - **Status:** Seeded with real web-scraped data (April 2026)
@@ -177,7 +182,7 @@ All prices and details scraped from actual vendor websites (April 2026).
 - **Run:** `pnpm --filter @workspace/api-server run seed:activities`
 - **Data rule:** Zero hallucinated prices — "$0" used where price wasn't on vendor website
 
-#### API Layer (30 endpoints, 0 TypeScript errors)
+#### API Layer (31 endpoints, 0 TypeScript errors)
 
 All routes under `/api` prefix. Full OpenAPI spec at `lib/api-spec/openapi.yaml`.
 
@@ -187,7 +192,7 @@ All routes under `/api` prefix. Full OpenAPI spec at `lib/api-spec/openapi.yaml`
 | Auth | 4 endpoints | Mixed | Session-based login/register/logout/me |
 | Activities | 4 endpoints | None | Browse, search, filter, detail |
 | Itineraries | 9 endpoints | Required | Full CRUD + items + export |
-| Chat | 4 endpoints | Required + Premium | AI concierge sessions/messages |
+| Chat | 5 endpoints | Required + Premium | AI concierge sessions/messages + SSE streaming |
 | Purchases | 3 endpoints | Mixed | Stripe checkout + webhook |
 | Dashboard | 1 endpoint | Required | User summary stats |
 | Admin | 4 endpoints | Admin | Activity CRUD + URL ingest |
@@ -216,7 +221,81 @@ All routes under `/api` prefix. Full OpenAPI spec at `lib/api-spec/openapi.yaml`
 
 - **Component library:** 56 shadcn/ui components + 3 layout components
 - **Hooks:** `use-mobile`, `use-toast`
-- **Utilities:** `cn()` class merger, `getImageUrl()`, `printItineraryPDF()`
+- **Utilities:** `cn()` class merger, `getImageUrl()`, `getActivityImageUrl()`, `printItineraryPDF()`
+
+#### AI Concierge (Fully Implemented)
+- **Status:** Production-ready with streaming, function calling, memory, and compression
+- **Model:** gpt-4o-mini (OpenAI Chat Completions API)
+- **Streaming:** SSE endpoint (`POST /chat/sessions/:id/messages/stream`) with real-time
+  token rendering, animated cursor, and typing indicators
+- **Non-streaming fallback:** `POST /chat/sessions/:id/messages`
+- **System prompt:** Lazy-loading Tier 1 architecture (~3,700 tokens vs original 10,550).
+  Vendor intelligence data loaded on-demand via tools, not crammed into prompt.
+- **Function calling (9 tools):**
+  - `search_activities` — filter by category, price, difficulty, query
+  - `get_activity_details` — full activity info with booking guides & provider contacts
+  - `get_vendor_details` — vendor intelligence & booking strategies
+  - `search_user_memory` — semantic search over stored preferences (cosine similarity)
+  - `save_user_memory` — store user preferences/details/concerns with embeddings
+  - `list_user_itineraries` — get user's trips
+  - `get_itinerary_details` — full itinerary + scheduled activities
+  - `add_to_itinerary` — add activity to day/time slot directly from chat
+  - `remove_from_itinerary` — remove activity from itinerary directly from chat
+- **Conversation compression:** When conversation exceeds 10 messages, older messages
+  are summarized via gpt-4o-mini and archived. Keeps 5 most recent messages verbatim.
+  Fallback to keyword extraction if summary API fails.
+- **User memory:** Semantic embeddings via `text-embedding-3-small` (1536 dimensions).
+  5 memory types: preference, detail, feedback, trip, concern. Persisted to
+  `user_memories` table with cosine similarity search.
+- **Mock mode:** Returns formatted activity suggestions when `OPENAI_API_KEY` is absent.
+- **Files:** `artifacts/api-server/src/routes/chat.ts`,
+  `artifacts/api-server/src/lib/ai-concierge/tools.ts`,
+  `artifacts/api-server/src/lib/ai-concierge/compression.ts`
+
+#### Activity Image System (Fully Implemented)
+- **Status:** All 15 activities have hero images; images render on all pages
+- **Image sources:**
+  - 13 existing PNG images in `public/activities/` (off-road, horseback, water sports, etc.)
+  - 6 AI-generated JPG images via fal.ai FLUX (catamaran, pirate ship, glass-bottom boat,
+    champagne brunch, afternoon sailing, party catamaran)
+  - 6 category placeholder PNGs (`category-cliff.png`, `category-ocean.png`, etc.)
+- **Frontend utility:** `getActivityImageUrl(imageUrl, category)` — returns the activity's
+  image URL or falls back to a category-specific placeholder. Used consistently across
+  Home.tsx, Activities.tsx, ActivityDetail.tsx, ItineraryDetail.tsx.
+- **Seed script updated:** All 15 activities in `seed-real-activities.ts` now have
+  `imageUrl` values pointing to local static assets.
+- **Files:** `artifacts/aurelion/src/lib/image-url.ts`,
+  `artifacts/aurelion/public/activities/`
+
+#### Itinerary PDF Export (Fully Implemented)
+- **Architecture:** HTML-to-print with luxury branded styling
+- **Branding:** Playfair Display + Lato fonts, gold accent (#c8a96e), dark background,
+  corner borders, dividers, page breaks
+- **Cover page:** Brand name, itinerary title, day count, export date, luxury tagline
+- **Content pages:** Day headers, time slots (morning/afternoon/evening), activity cards
+  with title, duration, difficulty, price, category, location, description, tags,
+  "What to Bring", "What to Expect"
+- **Print optimizations:** @page A4 sizing, print media queries, `page-break-inside: avoid`
+- **Tier gating:** Basic+ required, PremiumLock gate for free users
+- **File:** `artifacts/aurelion/src/lib/pdf-export.ts`
+
+#### UX Polish (Complete Pass)
+- **PremiumLockEnhanced component:** Conversion-focused premium gate with lock icon,
+  feature list, blurred preview content, price anchor, and CTA. Used in Chat.tsx,
+  ActivityDetail.tsx, ItineraryDetail.tsx.
+- **Error toasts:** Destructive toast notifications across Admin (CRUD failures),
+  Chat (AI errors), Login/Register (auth failures), Dashboard (chat creation),
+  ItineraryDetail (export failures).
+- **Breadcrumbs component:** Navigation aid in activity detail and itinerary pages.
+- **Mobile responsive:** Full responsive pass across all pages — mobile filter drawer
+  in Activities.tsx, responsive grids, optimized image sizing, touch-friendly targets.
+- **Navigation:** "My Dashboard" link in navbar (authenticated users only), login/register
+  redirects to dashboard on success, active link styling.
+- **Tier gating UI:** Consistent tier checks across Chat (Premium), activity booking guides
+  (Basic+/Premium+), advanced filters (Premium), itinerary export (Basic+).
+  Admin role bypasses all gates.
+- **Files:** `artifacts/aurelion/src/components/ui/premium-lock-enhanced.tsx`,
+  `artifacts/aurelion/src/components/ui/breadcrumbs.tsx`
 
 #### Code Quality
 - **Annotations:** Every function, route, component, and schema field has JSDoc
@@ -232,27 +311,12 @@ All routes under `/api` prefix. Full OpenAPI spec at `lib/api-spec/openapi.yaml`
 - **Missing:** Stripe test products not created, payment UI flow not tested end-to-end
 - **Files:** `artifacts/api-server/src/routes/purchases.ts`
 
-#### AI Concierge
-- **Backend:** Full OpenAI integration with system prompt, message history, mock fallback
-- **Model:** gpt-4o-mini (800 max tokens)
-- **System prompt:** Includes all activities from DB, instructs AI to only recommend real vendors
-- **Mock mode:** Returns formatted activity suggestions without OpenAI key
-- **Missing:** Streaming responses, prompt refinement with vendor intelligence data
-- **Files:** `artifacts/api-server/src/routes/chat.ts`
-
-#### Itinerary Export
-- **Frontend:** `printItineraryPDF()` utility exists (HTML-to-print approach)
-- **Backend:** `/api/itineraries/:id/export` endpoint with tier gating (Basic+ required)
-- **Missing:** Proper PDF generation, branded formatting
-- **File:** `artifacts/aurelion/src/lib/pdf-export.ts`
-
 ### Not Started
 
 - OAuth / social login
 - Email verification / password reset
 - Email notifications (welcome, booking confirmation)
 - Maps integration (activity pins, route visualization)
-- Photo galleries for activities
 - User reviews & ratings
 - Error tracking (Sentry or similar)
 - Analytics (PostHog, Plausible, or GA4)
@@ -298,47 +362,34 @@ All routes under `/api` prefix. Full OpenAPI spec at `lib/api-spec/openapi.yaml`
 
 ---
 
-### Week 2-3: UX Polish & Design System
+### ~~Week 2-3: UX Polish & Design System~~ DONE
 
-**Objective:** Make the app visually polished and usable.
+**Status:** Completed across commits c5a7923, a536a03, 04ae394.
 
-#### Tasks
-
-1. **Activity browsing experience**
-   - Polish activity cards (image, price, duration, category badge, provider)
-   - Ensure filters work: category, price range, duration, difficulty
-   - Activity detail page: prominent booking intelligence, clear CTAs
-
-2. **Itinerary builder UX**
-   - Day-by-day interface with morning/afternoon/evening slots
-   - Add activity from catalog to itinerary
-   - Reorder items within a day
-   - Total cost estimation
-
-3. **Homepage optimization**
-   - Hero section: clear value prop, featured activities
-   - Category grid: 6 categories with representative images
-   - Social proof: vendor count, activity count, review highlights
-   - CTA: "Start Planning" button
-
-4. **Responsive design audit**
-   - Test all pages at mobile breakpoints
-   - Fix layout issues on small screens
-   - Ensure touch targets are adequate
-
-#### Deliverables
-- [ ] Polished activity listing + detail pages
-- [ ] Functional itinerary builder with day/slot UX
-- [ ] Homepage hero + category grid
-- [ ] All pages responsive on mobile
+- [x] Polished activity listing + detail pages (images, price, duration, category, provider)
+- [x] Activity cards with hover animations, category badges, price anchoring
+- [x] Filters working: category, difficulty (search, price range planned for Phase 2)
+- [x] Functional itinerary builder with day/slot UX (morning/afternoon/evening)
+- [x] Homepage hero + category grid + featured experiences
+- [x] All pages responsive on mobile (filter drawer, responsive grids, touch targets)
+- [x] PremiumLockEnhanced component for conversion-focused gating
+- [x] Error toasts across all pages
+- [x] Breadcrumbs navigation component
+- [x] Activity images rendering on all pages with category fallbacks
 
 ---
 
-### Week 3-4: Payments & Tier Gating
+### Week 3-4: Payments & Tier Gating (Partially Done)
 
 **Objective:** Enable real payment flow.
 
-#### Tasks
+**Completed:**
+- [x] Tier gating implemented in UI across all pages (Chat, ActivityDetail, ItineraryDetail)
+- [x] Free/Basic/Premium content gates with PremiumLock and PremiumLockEnhanced
+- [x] PDF export with luxury Aurelion branding (Playfair Display, gold accents, A4 layout)
+- [x] Admin role bypasses all tier gates
+
+**Remaining:**
 
 1. **Stripe test mode setup**
    - Create test products: Basic ($9.99), Premium ($49.99)
@@ -346,52 +397,28 @@ All routes under `/api` prefix. Full OpenAPI spec at `lib/api-spec/openapi.yaml`
    - Verify webhook updates purchase status + itinerary tier
    - Handle success, cancellation, and failure states
 
-2. **Implement tier gating in UI**
-   - Free: browse activities, create itinerary (limited saves)
-   - Basic ($9.99): save itineraries, export PDF, booking guides visible
-   - Premium ($49.99): AI concierge unlocked, insider tips visible, provider contacts shown
-
-3. **PDF export (Basic tier feature)**
-   - Generate clean PDF from itinerary data
-   - Include: day-by-day schedule, activity details, booking guides, provider info
-   - Aurelion branding (logo, colors, footer)
-
 #### Deliverables
+- [x] Tier-gated content across all pages
+- [x] PDF export generating clean branded output
 - [ ] Stripe test mode checkout working
-- [ ] Tier-gated content across all pages
-- [ ] PDF export generating clean output
 - [ ] Upgrade flow UI (pricing page -> checkout -> confirmation)
 
 ---
 
-### Week 4-5: AI Concierge MVP
+### ~~Week 4-5: AI Concierge MVP~~ DONE
 
-**Objective:** Ship the Premium chat experience.
+**Status:** Completed across commits d39dc21, e7d72d9, f3e85f4. Exceeded original
+scope — shipped with streaming, function calling, semantic memory, and conversation
+compression (originally stretch goals or not planned).
 
-#### Tasks
-
-1. **System prompt engineering**
-   - Feed vendor `intelligenceReport` data into system prompt
-   - Personality: luxury travel advisor with insider knowledge
-   - Constraint: only recommend vendors and activities in the database
-   - Format: concise, actionable, markdown-formatted responses
-
-2. **Chat UI refinement**
-   - Typing indicators during AI response
-   - Error states (rate limit, API failure)
-   - Suggested starter questions ("What's the best snorkel tour?")
-   - Link to activities/vendors mentioned in responses
-
-3. **Streaming responses** (stretch goal)
-   - OpenAI streaming API
-   - Real-time token rendering in chat UI
-   - Graceful handling of stream interruptions
-
-#### Deliverables
-- [ ] System prompt tested with all 11 vendors' intelligence data
-- [ ] Chat UI polished with typing indicators + error handling
-- [ ] Premium-only access enforced (non-Premium sees upgrade prompt)
-- [ ] Optional: streaming responses
+- [x] System prompt with lazy-loading vendor intelligence (on-demand via tools)
+- [x] Chat UI with typing indicators, animated cursor, error handling
+- [x] Suggested starter questions in empty chat state
+- [x] Premium-only access enforced (PremiumLockEnhanced upgrade prompt)
+- [x] SSE streaming responses with real-time token rendering
+- [x] 9 function-calling tools (search, details, vendor intel, memory, itinerary CRUD)
+- [x] Conversation compression (summarize older messages, keep 5 recent verbatim)
+- [x] Semantic user memory with embeddings (preferences, concerns, trip details)
 
 ---
 
@@ -400,14 +427,18 @@ All routes under `/api` prefix. Full OpenAPI spec at `lib/api-spec/openapi.yaml`
 **Objective:** Deploy and get first users.
 
 #### Pre-launch checklist
-- [ ] 0 TypeScript errors (DONE)
-- [ ] Database seeded on production Supabase (DONE for vendors + activities)
+- [x] 0 TypeScript errors
+- [x] Database seeded on production Supabase (vendors + activities + images)
+- [x] AI concierge fully functional with streaming + tools
+- [x] Activity images rendering on all pages
+- [x] PDF export with luxury branding
+- [x] Tier gating across all pages
+- [x] 404 and error pages styled
 - [ ] Environment variables configured for production
 - [ ] Stripe webhooks pointed at production URL
 - [ ] Error tracking setup (Sentry)
 - [ ] Basic analytics (PostHog or Plausible)
 - [ ] Terms of Service + Privacy Policy pages
-- [ ] 404 and error pages styled
 - [ ] Full user flow tested: signup -> browse -> build -> upgrade -> chat
 - [ ] API rate limiting added (express-rate-limit)
 
@@ -696,6 +727,27 @@ The pipeline is a 3-month engineering effort that should only be justified by us
 (50+ active users) and research time burden (5+ hours/week). Manual curation is the moat
 for now — it's what makes us better than a Google search.
 
+### 2026-04-05: Lazy-Loading AI Architecture Over Monolithic System Prompt
+**Decision:** Feed vendor intelligence on-demand via function-calling tools instead of
+packing everything into the system prompt.
+**Rationale:** The original monolithic prompt was ~10,550 tokens with all vendor data
+embedded. The lazy-loading Tier 1 prompt is ~3,700 tokens — 65% smaller. Vendor details
+are fetched via `get_vendor_details` tool only when the conversation needs them.
+This reduces cost per message, avoids context window bloat, and keeps responses focused.
+**Trade-off:** Slightly slower first response when vendor data is needed (extra tool call
+round-trip), but much cheaper per conversation.
+
+### 2026-04-05: AI-Generated Activity Images Over Stock Photos
+**Decision:** Use fal.ai FLUX to generate activity-specific images rather than generic
+stock photos or vendor-scraped images.
+**Rationale:** Vendor website images have unclear licensing and may be hotlink-blocked.
+Stock photos are generic and don't match specific tour offerings. AI-generated images
+can be prompted to match the actual vessel type, activity, and setting. Each ocean
+activity gets a visually distinct image (catamaran, pirate schooner, glass-bottom boat,
+champagne brunch, etc.) rather than sharing generic "snorkeling" stock photos.
+**Constraint:** Images must accurately represent the activity — never show a yacht when
+the tour uses a catamaran, never show an empty beach when it's a group tour.
+
 ---
 
 ## Appendix
@@ -711,7 +763,7 @@ AURELION/
   
   lib/
     db/
-      src/schema/               # All 7 table schemas (heavily annotated)
+      src/schema/               # All 8 table schemas (heavily annotated)
       src/index.ts              # DB connection singleton
       drizzle.config.ts         # Drizzle Kit push config
     api-spec/
@@ -727,10 +779,11 @@ AURELION/
     api-server/
       src/index.ts              # Express server entry point
       src/app.ts                # Middleware pipeline
-      src/routes/               # All API route handlers
+      src/routes/               # All API route handlers (7 files, 31 endpoints)
       src/lib/auth.ts           # Password hashing + session checks
       src/lib/entitlements.ts   # Tier-based access control
       src/lib/logger.ts         # Pino logger config
+      src/lib/ai-concierge/     # AI tools, compression, prompt assembly
       src/scripts/              # Seed scripts
       src/types/                # express-session augmentation
       build.mjs                 # esbuild bundler config
@@ -738,8 +791,9 @@ AURELION/
       src/App.tsx               # Router + providers
       src/pages/                # 13 page components
       src/components/layout/    # Navbar, Footer, MainLayout
-      src/components/ui/        # 56 shadcn/ui components
+      src/components/ui/        # 56 shadcn/ui components + PremiumLock, breadcrumbs
       src/lib/                  # utils, image-url, pdf-export
+      public/activities/        # 19 activity hero images (13 PNG + 6 AI-generated JPG)
       src/hooks/                # use-mobile, use-toast
       vite.config.ts            # Vite dev server + proxy config
 ```

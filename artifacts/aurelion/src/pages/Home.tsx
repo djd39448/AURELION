@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useGetFeaturedActivities, useGetCategories } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
 import { ArrowRight, Compass, Shield, Sparkles } from "lucide-react";
-import { getImageUrl } from "@/lib/image-url";
+import { getImageUrl, getActivityImageUrl } from "@/lib/image-url";
 
 /**
  * Mapping of category name -> Tailwind gradient classes.
@@ -132,17 +132,11 @@ export default function Home() {
               >
                 <Link href={`/activities/${activity.id}`} className="group block">
                   <div className="relative aspect-[4/3] sm:aspect-[4/5] overflow-hidden mb-4 md:mb-6 bg-card border border-border">
-                    {activity.imageUrl ? (
-                      <img
-                        src={getImageUrl(activity.imageUrl)}
-                        alt={activity.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-muted flex items-center justify-center">
-                        <Compass className="w-12 h-12 text-muted-foreground/30" />
-                      </div>
-                    )}
+                    <img
+                      src={getActivityImageUrl(activity.imageUrl, activity.category)}
+                      alt={activity.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
                     <div className="absolute top-4 left-4">
                       <span className="bg-background/80 backdrop-blur-md text-foreground text-xs uppercase tracking-widest px-3 py-1 font-serif">
                         {activity.category}
