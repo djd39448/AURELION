@@ -42,7 +42,12 @@ async function getProviderId(name: string): Promise<number> {
   return row.id;
 }
 
-async function seed() {
+/**
+ * Seeds the activities table with real tour data from verified Aruba vendors.
+ * Resolves provider IDs first, then upserts activities using conflict-on-title
+ * to ensure idempotent re-runs.
+ */
+async function seed(): Promise<void> {
   console.log("🌴 AURELION Real Activities Seeder");
   console.log("=".repeat(55));
 

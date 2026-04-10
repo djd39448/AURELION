@@ -26,6 +26,8 @@ import { db, providersTable, activitiesTable } from "@workspace/db";
 /**
  * Fetches all vendors from the database and builds formatted intelligence blocks.
  * Uses explicit column selection for type safety across project references.
+ *
+ * @returns Array of vendor objects with contact info, booking methods, tips, and warnings.
  */
 async function fetchVendorIntelligence() {
   const vendors = await db.select({
@@ -61,6 +63,9 @@ async function fetchVendorIntelligence() {
 
 /**
  * Fetches all activities from the database for inclusion in the prompt.
+ * Returns lightweight projections with fields needed for prompt formatting.
+ *
+ * @returns Array of activity objects with title, pricing, duration, and location.
  */
 async function fetchActivities() {
   const acts = await db.select().from(activitiesTable);

@@ -40,8 +40,16 @@ const openai = process.env.OPENAI_API_KEY
 /** Maximum tool-call iterations to prevent infinite loops. */
 const MAX_TOOL_ITERATIONS = 5;
 
-// ─── Session CRUD (unchanged) ───────────────────────────────────────────────
+// ─── Session CRUD ───────────────────────────────────────────────────────────
 
+/**
+ * @route GET /api/chat/sessions
+ * @auth Required
+ * @returns {Array<ChatSession>} User's chat sessions ordered by createdAt ascending.
+ *   Timestamps serialized as ISO 8601.
+ * @throws {401} Unauthorized
+ * @throws {500} Internal server error
+ */
 router.get("/chat/sessions", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -59,6 +67,16 @@ router.get("/chat/sessions", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * @route POST /api/chat/sessions
+ * @auth Required
+ * @tier Premium — entitlement-gated via {@link canUseAIChat}
+ * @body {CreateChatSessionBody} — Optional `{ itineraryId?: number }` to link session to itinerary.
+ * @returns {ChatSession} The newly created session (HTTP 201).
+ * @throws {401} Unauthorized
+ * @throws {403} Requires Concierge Intelligence tier upgrade
+ * @throws {500} Internal server error
+ */
 router.post("/chat/sessions", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -80,6 +98,16 @@ router.post("/chat/sessions", async (req, res): Promise<void> => {
   }
 });
 
+/**
+ * @route GET /api/chat/sessions/:sessionId/messages
+ * @auth Required
+ * @returns {Array<ChatMessage>} All messages in the session (including archived),
+ *   ordered by createdAt ascending. Timestamps serialized as ISO 8601.
+ * @throws {400} Invalid session ID
+ * @throws {401} Unauthorized
+ * @throws {404} Session not found (or belongs to another user)
+ * @throws {500} Internal server error
+ */
 router.get("/chat/sessions/:sessionId/messages", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -104,6 +132,23 @@ router.get("/chat/sessions/:sessionId/messages", async (req, res): Promise<void>
 
 // ─── Non-Streaming Send (with function calling) ────────────────────────────
 
+/**
+ * @route POST /api/chat/sessions/:sessionId/messages
+ * @auth Required
+ * @tier Premium — entitlement-gated via {@link canUseAIChat}
+ * @body {SendChatMessageBody} — `{ content: string }` — the user's message text.
+ * @returns {ChatMessage} The AI assistant's response message.
+ * @throws {400} Invalid session ID or Zod validation failure
+ * @throws {401} Unauthorized
+ * @throws {403} Premium required
+ * @throws {404} Session not found
+ * @throws {500} Internal server error
+ *
+ * @description Sends a message and receives a non-streaming AI response.
+ * The AI may invoke function-calling tools (up to {@link MAX_TOOL_ITERATIONS}
+ * iterations) before generating the final text response. Old messages are
+ * automatically compressed via {@link maybeCompressSession}.
+ */
 router.post("/chat/sessions/:sessionId/messages", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -213,6 +258,22 @@ router.post("/chat/sessions/:sessionId/messages", async (req, res): Promise<void
 
 // ─── Streaming Send (SSE with function calling) ────────────────────────────
 
+/**
+ * @route POST /api/chat/sessions/:sessionId/messages/stream
+ * @auth Required
+ * @tier Premium — entitlement-gated via {@link canUseAIChat}
+ * @body {SendChatMessageBody} — `{ content: string }` — the user's message text.
+ * @returns SSE stream of `{ content: string }` chunks, ending with `{ done: true }`.
+ * @throws {400} Invalid session ID or Zod validation failure
+ * @throws {401} Unauthorized
+ * @throws {403} Premium required
+ * @throws {404} Session not found
+ * @throws {500} Internal server error (sent as SSE error event if headers already sent)
+ *
+ * @description Sends a message and receives a Server-Sent Events (SSE) streaming
+ * response. Phase 1 resolves any tool calls non-streaming (tools need full responses).
+ * Phase 2 streams the final AI text response word-by-word.
+ */
 router.post("/chat/sessions/:sessionId/messages/stream", async (req, res): Promise<void> => {
   const user = requireAuth(req);
   if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }

@@ -156,7 +156,12 @@ export async function maybeCompressSession(sessionId: number): Promise<boolean> 
 
 /**
  * Simple fallback summary when OpenAI is unavailable.
- * Extracts the first sentence of each user message.
+ * Extracts the first sentence of each user message and appends to any
+ * existing compressed history.
+ *
+ * @param existing - Previously compressed history (may be empty string).
+ * @param messages - Messages to summarize; only user messages are extracted.
+ * @returns Concatenated summary string prefixed with context.
  */
 function fallbackSummary(
   existing: string,

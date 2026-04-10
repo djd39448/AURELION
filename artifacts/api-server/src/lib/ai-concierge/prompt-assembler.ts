@@ -26,8 +26,11 @@ const PROMPTS_DIR = join(__dirname, "prompts");
 let cachedStaticPrompt: string | null = null;
 
 /**
- * Loads and concatenates the static prompt markdown files.
- * Cached after first load since these files never change at runtime.
+ * Loads and concatenates the static prompt markdown files (identity, agent,
+ * tools-index, skills-index, knowledge-index). Cached after first load
+ * since these files never change at runtime.
+ *
+ * @returns Concatenated markdown string separated by horizontal rules.
  */
 function loadStaticPrompts(): string {
   if (cachedStaticPrompt) return cachedStaticPrompt;
@@ -55,7 +58,11 @@ function loadStaticPrompts(): string {
 
 /**
  * Gets or generates the user-specific index section.
- * Uses cached version from DB if fresh, otherwise regenerates.
+ * Uses cached version from DB if it was updated within the last hour,
+ * otherwise regenerates via {@link generateUserIndex} and caches the result.
+ *
+ * @param userId - The authenticated user's ID.
+ * @returns Markdown string with user quick facts and memory instructions.
  */
 async function getUserIndex(userId: number): Promise<string> {
   const [user] = await db
@@ -89,6 +96,11 @@ async function getUserIndex(userId: number): Promise<string> {
 
 /**
  * Gets the compressed history for a chat session (if any).
+ * Returns a markdown-formatted summary of earlier messages, or empty string
+ * if no compression has occurred yet.
+ *
+ * @param sessionId - The chat session's database ID.
+ * @returns Markdown summary string, or empty string if no compressed history exists.
  */
 async function getCompressedHistory(sessionId: number): Promise<string> {
   const [session] = await db

@@ -43,7 +43,21 @@ interface ActivitySearchFilters {
   query?: string;
 }
 
-export async function searchActivities(filters: ActivitySearchFilters) {
+/**
+ * Searches the activity catalog with optional filters.
+ * All filter conditions are ANDed together; text search uses ILIKE on title/description.
+ * Results are capped at 5 to keep AI context concise.
+ *
+ * @param filters - Search criteria (all optional): category, price range, difficulty, keyword query.
+ * @returns Object with `count` and `activities` array containing formatted summaries.
+ *
+ * @example
+ * ```ts
+ * const results = await searchActivities({ category: "Ocean", max_price: 100 });
+ * // => { count: 3, activities: [{ id: 1, title: "Snorkel Tour", ... }] }
+ * ```
+ */
+export async function searchActivities(filters: ActivitySearchFilters): Promise<{ count: number; activities: Array<Record<string, unknown>> }> {
   const conditions = [];
 
   if (filters.category) {
@@ -98,7 +112,20 @@ export async function searchActivities(filters: ActivitySearchFilters) {
 
 // ─── get_activity_details ───────────────────────────────────────────────────
 
-export async function getActivityDetails(activityId: number) {
+/**
+ * Fetches full details for a single activity including provider contact info,
+ * booking guides, insider tips, and warnings.
+ *
+ * @param activityId - The activity's database ID (from search results).
+ * @returns Full activity detail object, or `{ error }` if not found.
+ *
+ * @example
+ * ```ts
+ * const detail = await getActivityDetails(42);
+ * // => { id: 42, title: "UTV Off-Road", provider: "ABC Tours", ... }
+ * ```
+ */
+export async function getActivityDetails(activityId: number): Promise<Record<string, unknown>> {
   const [activity] = await db
     .select()
     .from(activitiesTable)
@@ -134,7 +161,20 @@ export async function getActivityDetails(activityId: number) {
 
 // ─── get_vendor_details ─────────────────────────────────────────────────────
 
-export async function getVendorDetails(vendorName: string) {
+/**
+ * Fetches complete vendor intelligence: booking methods, insider tips,
+ * warnings, and contact information. Uses ILIKE for partial name matching.
+ *
+ * @param vendorName - Vendor name (partial match via ILIKE).
+ * @returns Vendor intelligence object with contact/booking/tips, or `{ error }` if not found.
+ *
+ * @example
+ * ```ts
+ * const vendor = await getVendorDetails("ABC Tours");
+ * // => { name: "ABC Tours Aruba", confidence: 0.95, contact: { ... }, ... }
+ * ```
+ */
+export async function getVendorDetails(vendorName: string): Promise<Record<string, unknown>> {
   const [vendor] = await db
     .select({
       name: providersTable.name,
@@ -177,7 +217,22 @@ export async function getVendorDetails(vendorName: string) {
 
 // ─── search_user_memory ─────────────────────────────────────────────────────
 
-export async function searchUserMemory(userId: number, query: string) {
+/**
+ * Searches the user's stored memories using semantic similarity (pgvector cosine)
+ * when OpenAI embeddings are available, falling back to keyword ILIKE search.
+ * Updates access stats (lastAccessed, accessCount) for retrieved memories.
+ *
+ * @param userId - The authenticated user's ID.
+ * @param query - Natural language query (e.g., "budget constraints", "family details").
+ * @returns Object with `count` and `memories` array, each with content, type, and relevance score.
+ *
+ * @example
+ * ```ts
+ * const results = await searchUserMemory(7, "budget constraints");
+ * // => { count: 2, memories: [{ content: "Budget under $100/person", type: "concern", relevance: 0.87 }] }
+ * ```
+ */
+export async function searchUserMemory(userId: number, query: string): Promise<{ count: number; memories: Array<{ content: string; type: string; relevance: number }> }> {
   const openai = getOpenAI();
 
   if (!openai) {
@@ -264,7 +319,22 @@ interface SaveMemoryData {
   content: string;
 }
 
-export async function saveUserMemory(userId: number, data: SaveMemoryData) {
+/**
+ * Persists a new memory about the user for future personalization.
+ * Generates an OpenAI embedding for semantic search (when available),
+ * and regenerates the user's AI index for important memory types.
+ *
+ * @param userId - The authenticated user's ID.
+ * @param data - Memory payload with type (preference/detail/feedback/trip/concern) and content.
+ * @returns Success confirmation with the new memory's database ID.
+ *
+ * @example
+ * ```ts
+ * const result = await saveUserMemory(7, { type: "preference", content: "Prefers morning tours" });
+ * // => { success: true, memory_id: 42, type: "preference" }
+ * ```
+ */
+export async function saveUserMemory(userId: number, data: SaveMemoryData): Promise<{ success: boolean; memory_id: number; type: string }> {
   const openai = getOpenAI();
   let embeddingJson: string | null = null;
 
@@ -314,7 +384,21 @@ export async function saveUserMemory(userId: number, data: SaveMemoryData) {
 
 // ─── get_tool_definition ────────────────────────────────────────────────────
 
-export function getToolDefinition(category: string) {
+/**
+ * Loads on-demand tool definitions from JSON files.
+ * Used by the AI to dynamically discover available tool schemas
+ * without bloating the base prompt.
+ *
+ * @param category - Tool category: "itinerary_tools", "activity_tools", or "user_tools".
+ * @returns Object with `category` and `tools` array, or `{ error }` for invalid/missing categories.
+ *
+ * @example
+ * ```ts
+ * const defs = getToolDefinition("itinerary_tools");
+ * // => { category: "itinerary_tools", tools: [{ name: "add_to_itinerary", ... }] }
+ * ```
+ */
+export function getToolDefinition(category: string): Record<string, unknown> {
   const valid = ["itinerary_tools", "activity_tools", "user_tools"];
   if (!valid.includes(category)) {
     return { error: `Invalid category: ${category}. Valid: ${valid.join(", ")}` };
@@ -331,7 +415,21 @@ export function getToolDefinition(category: string) {
 
 // ─── get_skill ──────────────────────────────────────────────────────────────
 
-export function getSkill(skillName: string) {
+/**
+ * Loads a workflow instruction file (markdown) for the AI to follow
+ * when executing multi-step tasks like itinerary creation or booking assistance.
+ *
+ * @param skillName - One of: "itinerary_creation", "activity_recommendation",
+ *   "booking_assistance", "itinerary_modification", "preference_learning".
+ * @returns Object with `skill` name and `workflow` markdown, or `{ error }` for invalid/missing skills.
+ *
+ * @example
+ * ```ts
+ * const skill = getSkill("booking_assistance");
+ * // => { skill: "booking_assistance", workflow: "# Booking Assistance\n..." }
+ * ```
+ */
+export function getSkill(skillName: string): Record<string, unknown> {
   const valid = [
     "itinerary_creation",
     "activity_recommendation",
@@ -354,7 +452,20 @@ export function getSkill(skillName: string) {
 
 // ─── Itinerary Tools (directly callable) ────────────────────────────────────
 
-export async function listUserItineraries(userId: number) {
+/**
+ * Lists all itineraries belonging to a user, ordered newest-first.
+ * Returns lightweight summaries (no items) for AI tool responses.
+ *
+ * @param userId - The authenticated user's ID.
+ * @returns Object with `count` and `itineraries` array containing id, title, totalDays, status.
+ *
+ * @example
+ * ```ts
+ * const list = await listUserItineraries(7);
+ * // => { count: 2, itineraries: [{ id: 1, title: "Aruba Week", totalDays: 5, status: "draft" }] }
+ * ```
+ */
+export async function listUserItineraries(userId: number): Promise<{ count: number; itineraries: Array<Record<string, unknown>> }> {
   const results = await db
     .select({
       id: itinerariesTable.id,
@@ -369,10 +480,24 @@ export async function listUserItineraries(userId: number) {
   return { count: results.length, itineraries: results };
 }
 
+/**
+ * Adds an activity to a specific day and time slot in the user's itinerary.
+ * Validates ownership, day range, and slot availability before inserting.
+ *
+ * @param userId - The authenticated user's ID (for ownership verification).
+ * @param params - Placement details: itinerary_id, activity_id, day (1-indexed), time_slot.
+ * @returns Success message with item_id, or `{ error }` on validation failure.
+ *
+ * @example
+ * ```ts
+ * const result = await addToItinerary(7, { itinerary_id: 1, activity_id: 42, day: 2, time_slot: "morning" });
+ * // => { success: true, message: 'Added "Snorkel Tour" to Day 2 morning', item_id: 15 }
+ * ```
+ */
 export async function addToItinerary(
   userId: number,
   params: { itinerary_id: number; activity_id: number; day: number; time_slot: string }
-) {
+): Promise<Record<string, unknown>> {
   // Verify ownership
   const [itinerary] = await db
     .select({ id: itinerariesTable.id, userId: itinerariesTable.userId, totalDays: itinerariesTable.totalDays })
@@ -425,10 +550,24 @@ export async function addToItinerary(
   };
 }
 
+/**
+ * Removes an activity from the user's itinerary by item ID.
+ * Validates itinerary ownership before deletion.
+ *
+ * @param userId - The authenticated user's ID (for ownership verification).
+ * @param params - Removal target: itinerary_id and item_id.
+ * @returns `{ success: true, message }` or `{ error }` on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await removeFromItinerary(7, { itinerary_id: 1, item_id: 15 });
+ * // => { success: true, message: "Activity removed from itinerary" }
+ * ```
+ */
 export async function removeFromItinerary(
   userId: number,
   params: { itinerary_id: number; item_id: number }
-) {
+): Promise<Record<string, unknown>> {
   const [itinerary] = await db
     .select({ userId: itinerariesTable.userId })
     .from(itinerariesTable)
@@ -450,7 +589,21 @@ export async function removeFromItinerary(
   return { success: true, message: "Activity removed from itinerary" };
 }
 
-export async function getItineraryDetails(userId: number, itineraryId: number) {
+/**
+ * Fetches full itinerary details including all scheduled activities per day/time slot.
+ * Joins itinerary items with activity data for a complete view.
+ *
+ * @param userId - The authenticated user's ID (for ownership verification).
+ * @param itineraryId - The itinerary's database ID.
+ * @returns Full itinerary with items array, or `{ error }` if not found or access denied.
+ *
+ * @example
+ * ```ts
+ * const detail = await getItineraryDetails(7, 1);
+ * // => { id: 1, title: "Aruba Week", total_days: 5, items: [{ day: 1, time_slot: "morning", ... }] }
+ * ```
+ */
+export async function getItineraryDetails(userId: number, itineraryId: number): Promise<Record<string, unknown>> {
   const [itinerary] = await db
     .select()
     .from(itinerariesTable)
@@ -493,7 +646,16 @@ export async function getItineraryDetails(userId: number, itineraryId: number) {
 
 /**
  * Returns the OpenAI function-calling tool definitions for all meta-tools.
- * These are always included in every API call.
+ * These are always included in every API call to enable the AI to search
+ * activities, manage itineraries, and access user memory.
+ *
+ * @returns Array of OpenAI ChatCompletionTool objects defining all available functions.
+ *
+ * @example
+ * ```ts
+ * const tools = getMetaToolDefinitions();
+ * const completion = await openai.chat.completions.create({ model: "gpt-4o-mini", messages, tools });
+ * ```
  */
 export function getMetaToolDefinitions(): OpenAI.ChatCompletionTool[] {
   return [
@@ -634,6 +796,17 @@ export function getMetaToolDefinitions(): OpenAI.ChatCompletionTool[] {
 /**
  * Executes a meta-tool by name with the given arguments.
  * Called by the chat route when OpenAI returns a function_call.
+ * Routes to the appropriate handler based on the tool name string.
+ *
+ * @param toolName - The function name from the OpenAI tool_call (e.g., "search_activities").
+ * @param args - Parsed JSON arguments from the tool call.
+ * @param userId - The authenticated user's ID (passed to user-scoped tools).
+ * @returns The tool's result object, or `{ error }` for unknown tool names.
+ *
+ * @example
+ * ```ts
+ * const result = await executeTool("search_activities", { category: "Ocean" }, userId);
+ * ```
  */
 export async function executeTool(
   toolName: string,

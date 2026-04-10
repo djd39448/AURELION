@@ -54,10 +54,17 @@ export const userMemoriesTable = pgTable("user_memories", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Zod schema for inserting a user memory.
+ * Omits `id` and `createdAt` which are server-generated defaults.
+ */
 export const insertUserMemorySchema = createInsertSchema(userMemoriesTable).omit({
   id: true,
   createdAt: true,
 });
 
+/** TypeScript type for a validated user-memory insert payload. */
 export type InsertUserMemory = z.infer<typeof insertUserMemorySchema>;
+
+/** TypeScript type for a full user-memory row as returned by SELECT. */
 export type UserMemory = typeof userMemoriesTable.$inferSelect;
