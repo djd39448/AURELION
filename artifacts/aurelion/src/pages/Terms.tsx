@@ -11,6 +11,7 @@
  */
 
 import { Link } from "wouter";
+import { SEOMeta } from "@/components/SEOMeta";
 
 /**
  * Terms of Service page component.
@@ -21,6 +22,12 @@ import { Link } from "wouter";
  */
 export default function Terms() {
   return (
+    <>
+    <SEOMeta
+      title="Terms of Service"
+      description="Read AURELION's Terms of Service — covering our service description, payment and refund policy, AI Concierge disclaimer, and limitation of liability."
+      path="/terms"
+    />
     <div className="w-full">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="mb-16">
@@ -180,5 +187,6 @@ export default function Terms() {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { useCreateCheckout, useListPurchases, useGetMe } from "@workspace/api-client-react";
 import { Check, Compass, Star, Shield } from "lucide-react";
 import { useLocation } from "wouter";
+import { SEOMeta } from "@/components/SEOMeta";
 
 /**
  * Pricing page component.
@@ -68,6 +69,12 @@ export default function Pricing() {
   const isBasic = purchases?.some(p => p.productType === 'BASIC');
 
   return (
+    <>
+    <SEOMeta
+      title="Pricing & Membership"
+      description="Choose your AURELION membership — Explorer (free), Planner, or Concierge. Unlock AI-powered itineraries, insider intelligence, and premium Aruba adventure booking."
+      path="/pricing"
+    />
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
       <div className="text-center max-w-3xl mx-auto mb-16">
         <span className="text-primary font-serif tracking-widest text-sm uppercase mb-4 block">Membership</span>
@@ -152,5 +159,6 @@ export default function Pricing() {
         </div>
       </div>
     </div>
+    </>
   );
 }

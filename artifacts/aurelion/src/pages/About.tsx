@@ -14,6 +14,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { getImageUrl } from "@/lib/image-url";
+import { SEOMeta } from "@/components/SEOMeta";
 
 /**
  * About page component.
@@ -24,6 +25,12 @@ import { getImageUrl } from "@/lib/image-url";
  */
 export default function About() {
   return (
+    <>
+    <SEOMeta
+      title="About"
+      description="Learn about AURELION — Aruba's premier luxury adventure platform. Discover our curation philosophy, AI Concierge service, and commitment to vetted excellence."
+      path="/about"
+    />
     <div className="w-full">
       {/* Hero */}
       <div className="relative h-[50vh] min-h-[400px] flex items-center justify-center">
@@ -72,5 +79,6 @@ export default function About() {
         </div>
       </div>
     </div>
+    </>
   );
 }

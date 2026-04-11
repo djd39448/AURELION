@@ -11,6 +11,7 @@
  */
 
 import { Link } from "wouter";
+import { SEOMeta } from "@/components/SEOMeta";
 
 /**
  * Privacy Policy page component.
@@ -21,6 +22,12 @@ import { Link } from "wouter";
  */
 export default function Privacy() {
   return (
+    <>
+    <SEOMeta
+      title="Privacy Policy"
+      description="AURELION's Privacy Policy — learn how we collect, use, and protect your personal data, cookie policy, and your rights as a user of our platform."
+      path="/privacy"
+    />
     <div className="w-full">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="mb-16">
@@ -200,5 +207,6 @@ export default function Privacy() {
         </div>
       </div>
     </div>
+    </>
   );
 }

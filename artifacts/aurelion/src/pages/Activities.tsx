@@ -27,6 +27,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, MapPin, Clock, SlidersHorizontal, X } from "lucide-react";
 import { PremiumLock } from "@/components/ui/premium-lock";
 import { getActivityImageUrl } from "@/lib/image-url";
+import { SEOMeta } from "@/components/SEOMeta";
 
 /**
  * Activities directory page component.
@@ -125,6 +126,12 @@ export default function Activities() {
   );
 
   return (
+    <>
+    <SEOMeta
+      title="Activities Directory"
+      description="Browse Aruba's most exclusive adventures — cliff diving, ocean exploration, off-road expeditions, and more. Filter by category, difficulty, and terrain."
+      path="/activities"
+    />
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8 md:mb-12 text-center md:text-left">
         <h1 className="font-serif text-4xl md:text-5xl text-foreground mb-4">The Directory</h1>
@@ -288,5 +295,6 @@ export default function Activities() {
         </div>
       </div>
     </div>
+    </>
   );
 }

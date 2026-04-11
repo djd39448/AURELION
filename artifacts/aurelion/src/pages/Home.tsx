@@ -18,6 +18,7 @@ import { useGetFeaturedActivities, useGetCategories } from "@workspace/api-clien
 import { motion } from "framer-motion";
 import { ArrowRight, Compass, Shield, Sparkles } from "lucide-react";
 import { getImageUrl, getActivityImageUrl } from "@/lib/image-url";
+import { SEOMeta } from "@/components/SEOMeta";
 
 /**
  * Mapping of category name -> Tailwind gradient classes.
@@ -48,6 +49,12 @@ export default function Home() {
   const { data: categories } = useGetCategories();
 
   return (
+    <>
+    <SEOMeta
+      title="Luxury Aruba Adventures"
+      description="AURELION curates Aruba's finest adventures — cliff diving, ocean exploration, off-road expeditions and more. Book your unforgettable experience today."
+      path="/"
+    />
     <div className="flex flex-col w-full">
       {/* Hero Section */}
       <section className="relative h-[90vh] min-h-[600px] flex items-center justify-center overflow-hidden">
@@ -276,5 +283,6 @@ export default function Home() {
         </div>
       </section>
     </div>
+    </>
   );
 }
