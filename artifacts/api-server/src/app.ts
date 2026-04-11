@@ -12,7 +12,8 @@
  * 4. JSON body parser (all other routes)
  * 5. URL-encoded body parser (form submissions)
  * 6. Session management (express-session with 7-day cookies)
- * 7. Route handlers (all under /api prefix)
+ * 7. Rate limiting (general 100/15min, auth 10/15min, concierge 20/hr)
+ * 8. Route handlers (all under /api prefix)
  *
  * @module api-server/app
  */
@@ -20,6 +21,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import rateLimit from "express-rate-limit";
 import session from "express-session";
 import router from "./routes";
 import { logger } from "./lib/logger";
@@ -123,7 +125,46 @@ app.use(session({
 }));
 
 // ---------------------------------------------------------------------------
-// 7. ROUTE HANDLERS
+// 7. RATE LIMITING
+// ---------------------------------------------------------------------------
+// Three tiers of rate limits to protect against abuse:
+// - General: 100 req / 15 min per IP (applied globally to all /api routes)
+// - Auth: 10 req / 15 min per IP (tighter limit on /api/auth/* endpoints)
+// - AI concierge: 20 req / hour per IP (/api/chat/* — expensive LLM calls)
+//
+// Responses exceed the limit receive a 429 with a JSON error body.
+// ---------------------------------------------------------------------------
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 minutes
+  limit: 100,
+  standardHeaders: "draft-8",  // Return RateLimit headers per draft-ietf-httpapi-ratelimit-headers-08
+  legacyHeaders: false,
+  message: { error: "Too many requests — please slow down and try again later." },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 minutes
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many auth attempts — please wait before trying again." },
+});
+
+const conciergeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,   // 1 hour
+  limit: 20,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "AI concierge rate limit reached — please try again in an hour." },
+});
+
+// Apply general limiter to all /api routes, then tighter limits on specific paths.
+app.use("/api", generalLimiter);
+app.use("/api/auth", authLimiter);
+app.use("/api/chat", conciergeLimiter);
+
+// ---------------------------------------------------------------------------
+// 8. ROUTE HANDLERS
 // ---------------------------------------------------------------------------
 // All API routes are mounted under the /api prefix. The router is defined in
 // ./routes and contains sub-routers for auth, itineraries, purchases, etc.

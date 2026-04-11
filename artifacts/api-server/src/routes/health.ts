@@ -12,7 +12,11 @@
  * Zod schema to guarantee a stable contract.
  */
 import { Router, type IRouter } from "express";
+import { createRequire } from "module";
 import { HealthCheckResponse } from "@workspace/api-zod";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../../package.json") as { version: string };
 
 const router: IRouter = Router();
 
@@ -29,6 +33,22 @@ const router: IRouter = Router();
 router.get("/healthz", (_req, res): void => {
   const data = HealthCheckResponse.parse({ status: "ok" });
   res.json(data);
+});
+
+/**
+ * @route GET /api/health
+ * @auth None
+ * @returns {{ status: "ok", timestamp: string, version: string }}
+ *
+ * Extended health check that includes server timestamp (ISO 8601) and the
+ * package version. Used by monitoring dashboards and deployment verification.
+ *
+ * @example
+ * // Response
+ * { "status": "ok", "timestamp": "2026-04-11T14:00:00.000Z", "version": "0.0.0" }
+ */
+router.get("/health", (_req, res): void => {
+  res.json({ status: "ok", timestamp: new Date().toISOString(), version });
 });
 
 export default router;

@@ -16,6 +16,21 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 
+// ---------------------------------------------------------------------------
+// STRUCTURED ERROR MONITORING
+// ---------------------------------------------------------------------------
+// Log unhandled errors and promise rejections to Pino at error level so they
+// appear in Railway's structured log stream and can be alerted on.
+// ---------------------------------------------------------------------------
+process.on("uncaughtException", (err) => {
+  logger.error({ err }, "Uncaught exception — process will exit");
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  logger.error({ reason }, "Unhandled promise rejection");
+});
+
 /**
  * Port the HTTP server listens on.
  * Defaults to 3001 for local development; production deployments set PORT
