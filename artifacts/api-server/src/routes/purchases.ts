@@ -21,7 +21,7 @@
  * - Without a valid signature, the webhook returns 400.
  */
 import { Router } from "express";
-import { db, purchasesTable, itinerariesTable } from "@workspace/db";
+import { db, purchasesTable, itinerariesTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { CreateCheckoutBody } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
@@ -110,24 +110,35 @@ router.post("/purchases/checkout", async (req, res): Promise<void> => {
     return;
   }
   try {
-    const [itinerary] = await db.select().from(itinerariesTable)
-      .where(and(eq(itinerariesTable.id, itineraryId), eq(itinerariesTable.userId, user.id)));
-    if (!itinerary) { res.status(404).json({ error: "Itinerary not found" }); return; }
+    // itineraryId === 0 means an account-level upgrade from the Pricing page (not tied to a specific itinerary).
+    // Only verify itinerary ownership when a real itinerary ID is provided.
+    const linkedItineraryId = itineraryId > 0 ? itineraryId : null;
+    if (linkedItineraryId) {
+      const [itinerary] = await db.select().from(itinerariesTable)
+        .where(and(eq(itinerariesTable.id, linkedItineraryId), eq(itinerariesTable.userId, user.id)));
+      if (!itinerary) { res.status(404).json({ error: "Itinerary not found" }); return; }
+    }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${process.env.REPLIT_DOMAINS?.split(",")[0] || "localhost"}`;
+    const userTier = productType.toLowerCase() as "basic" | "premium";
 
     if (!stripe) {
-      const [purchase] = await db.insert(purchasesTable).values({
+      await db.insert(purchasesTable).values({
         userId: user.id,
-        itineraryId,
+        itineraryId: linkedItineraryId,
         productType,
         amount: PRICES[productType] / 100,
         status: "completed",
         stripeSessionId: `mock_${Date.now()}`,
-      }).returning();
-      await db.update(itinerariesTable)
-        .set({ tierType: productType })
-        .where(eq(itinerariesTable.id, itineraryId));
+      });
+      if (linkedItineraryId) {
+        await db.update(itinerariesTable)
+          .set({ tierType: productType })
+          .where(eq(itinerariesTable.id, linkedItineraryId));
+      }
+      await db.update(usersTable)
+        .set({ tier: userTier })
+        .where(eq(usersTable.id, user.id));
       res.json({ url: `${appUrl}/dashboard?success=true` });
       return;
     }
@@ -152,14 +163,14 @@ router.post("/purchases/checkout", async (req, res): Promise<void> => {
       cancel_url: `${appUrl}/pricing`,
       metadata: {
         userId: String(user.id),
-        itineraryId: String(itineraryId),
+        itineraryId: linkedItineraryId ? String(linkedItineraryId) : "",
         productType,
       },
     });
 
     await db.insert(purchasesTable).values({
       userId: user.id,
-      itineraryId,
+      itineraryId: linkedItineraryId,
       productType,
       amount: PRICES[productType] / 100,
       status: "pending",
@@ -209,13 +220,18 @@ router.post("/purchases/webhook", async (req, res): Promise<void> => {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const { userId, itineraryId, productType } = session.metadata ?? {};
-      if (userId && itineraryId && productType) {
+      if (userId && productType) {
         await db.update(purchasesTable)
           .set({ status: "completed" })
           .where(eq(purchasesTable.stripeSessionId, session.id));
-        await db.update(itinerariesTable)
-          .set({ tierType: productType })
-          .where(eq(itinerariesTable.id, Number(itineraryId)));
+        if (itineraryId && Number(itineraryId) > 0) {
+          await db.update(itinerariesTable)
+            .set({ tierType: productType })
+            .where(eq(itinerariesTable.id, Number(itineraryId)));
+        }
+        await db.update(usersTable)
+          .set({ tier: productType.toLowerCase() })
+          .where(eq(usersTable.id, Number(userId)));
       }
     }
     res.json({ received: true });
