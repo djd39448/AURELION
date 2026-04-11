@@ -6,6 +6,7 @@
   },
   "deploy": {
     "startCommand": "node --enable-source-maps artifacts/api-server/dist/index.mjs",
+    "preDeployCommand": "pnpm --filter @workspace/db run push && (cd artifacts/api-server && node --import=tsx src/scripts/seed-vendors.ts || true) && (cd artifacts/api-server && node --import=tsx src/scripts/seed-real-activities.ts || true)",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
