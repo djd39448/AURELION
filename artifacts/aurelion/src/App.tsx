@@ -33,6 +33,8 @@ import ItineraryNew from "@/pages/ItineraryNew";
 import ItineraryDetail from "@/pages/ItineraryDetail";
 import Chat from "@/pages/Chat";
 import Admin from "@/pages/Admin";
+import Terms from "@/pages/Terms";
+import Privacy from "@/pages/Privacy";
 
 /**
  * Singleton TanStack QueryClient instance.
@@ -49,6 +51,8 @@ const queryClient = new QueryClient();
  *  - /activities/:id       ActivityDetail(public, premium content gated)
  *  - /pricing              Pricing       (public)
  *  - /about                About         (public)
+ *  - /terms                Terms         (public)
+ *  - /privacy              Privacy       (public)
  *  - /auth/login           Login         (public, guest-only intent)
  *  - /auth/register        Register      (public, guest-only intent)
  *  - /dashboard            Dashboard     (auth required)
@@ -70,6 +74,8 @@ function Router() {
         <Route path="/activities/:id" component={ActivityDetail} />
         <Route path="/pricing" component={Pricing} />
         <Route path="/about" component={About} />
+        <Route path="/terms" component={Terms} />
+        <Route path="/privacy" component={Privacy} />
         <Route path="/auth/login" component={Login} />
         <Route path="/auth/register" component={Register} />
         <Route path="/dashboard" component={Dashboard} />
