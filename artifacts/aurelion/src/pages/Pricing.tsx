@@ -20,6 +20,7 @@ import { useCreateCheckout, useListPurchases, useGetMe } from "@workspace/api-cl
 import { Check, Compass, Star, Shield } from "lucide-react";
 import { useLocation } from "wouter";
 import { SEOMeta } from "@/components/SEOMeta";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Pricing page component.
@@ -121,12 +122,18 @@ export default function Pricing() {
             <li className="flex gap-3 text-sm text-muted-foreground line-through opacity-50"><Check className="w-5 h-5 shrink-0" /> Insider booking intelligence</li>
             <li className="flex gap-3 text-sm text-muted-foreground line-through opacity-50"><Check className="w-5 h-5 shrink-0" /> AI Concierge Chat</li>
           </ul>
-          <Button 
+          <Button
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-serif tracking-widest uppercase"
             onClick={() => handleUpgrade('BASIC')}
-            disabled={isPremium || isBasic}
+            disabled={isPremium || isBasic || checkoutMutation.isPending}
           >
-            {isPremium || isBasic ? "Purchased" : "Upgrade to Planner"}
+            {checkoutMutation.isPending ? (
+              <><Spinner className="mr-2" /> Redirecting to checkout...</>
+            ) : isPremium || isBasic ? (
+              "Purchased"
+            ) : (
+              "Upgrade to Planner"
+            )}
           </Button>
         </div>
 
@@ -148,13 +155,19 @@ export default function Pricing() {
             <li className="flex gap-3 text-sm text-foreground"><Check className="w-5 h-5 text-primary shrink-0" /> Provider direct contacts</li>
             <li className="flex gap-3 text-sm text-foreground font-medium text-primary"><Check className="w-5 h-5 text-primary shrink-0" /> 24/7 AI Concierge Chat</li>
           </ul>
-          <Button 
+          <Button
             variant="outline"
             className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground font-serif tracking-widest uppercase relative z-10 transition-colors"
             onClick={() => handleUpgrade('PREMIUM')}
-            disabled={isPremium}
+            disabled={isPremium || checkoutMutation.isPending}
           >
-            {isPremium ? "Active" : "Unlock Concierge"}
+            {checkoutMutation.isPending ? (
+              <><Spinner className="mr-2" /> Redirecting to checkout...</>
+            ) : isPremium ? (
+              "Active"
+            ) : (
+              "Unlock Concierge"
+            )}
           </Button>
         </div>
       </div>

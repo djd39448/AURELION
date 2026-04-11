@@ -19,6 +19,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import NotFound from "@/pages/not-found";
 
 // Pages
@@ -69,24 +70,26 @@ const queryClient = new QueryClient();
 function Router() {
   return (
     <MainLayout>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/activities" component={Activities} />
-        <Route path="/activities/:id" component={ActivityDetail} />
-        <Route path="/pricing" component={Pricing} />
-        <Route path="/about" component={About} />
-        <Route path="/terms" component={Terms} />
-        <Route path="/privacy" component={Privacy} />
-        <Route path="/auth/login" component={Login} />
-        <Route path="/auth/register" component={Register} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/itineraries/new" component={ItineraryNew} />
-        <Route path="/itineraries/:id" component={ItineraryDetail} />
-        <Route path="/chat/:sessionId" component={Chat} />
-        <Route path="/admin" component={Admin} />
-        {/* Catch-all: renders when no route above matches */}
-        <Route component={NotFound} />
-      </Switch>
+      <ErrorBoundary section="this page">
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/activities" component={Activities} />
+          <Route path="/activities/:id" component={ActivityDetail} />
+          <Route path="/pricing" component={Pricing} />
+          <Route path="/about" component={About} />
+          <Route path="/terms" component={Terms} />
+          <Route path="/privacy" component={Privacy} />
+          <Route path="/auth/login" component={Login} />
+          <Route path="/auth/register" component={Register} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/itineraries/new" component={ItineraryNew} />
+          <Route path="/itineraries/:id" component={ItineraryDetail} />
+          <Route path="/chat/:sessionId" component={Chat} />
+          <Route path="/admin" component={Admin} />
+          {/* Catch-all: renders when no route above matches */}
+          <Route component={NotFound} />
+        </Switch>
+      </ErrorBoundary>
     </MainLayout>
   );
 }

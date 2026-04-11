@@ -39,6 +39,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Clock, Download, MapPin, Plus, Trash2 } from "lucide-react";
 import { PremiumLock } from "@/components/ui/premium-lock";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getActivityImageUrl } from "@/lib/image-url";
 
 /**
@@ -144,10 +145,49 @@ export default function ItineraryDetail() {
     }
   };
 
-  if (isLoading)
-    return <div className="p-24 text-center font-serif text-muted-foreground">Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <Skeleton className="h-5 w-48 mb-6 bg-muted" />
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Sidebar skeleton */}
+          <div className="hidden md:block w-64 shrink-0 space-y-4">
+            <div className="bg-card border border-border p-6 rounded-xl space-y-4">
+              <Skeleton className="h-7 w-40 bg-muted" />
+              <Skeleton className="h-4 w-28 bg-muted" />
+              <div className="mt-4 space-y-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-10 w-full bg-muted rounded-lg" />
+                ))}
+              </div>
+            </div>
+            <Skeleton className="h-28 w-full bg-muted rounded-xl" />
+          </div>
+          {/* Main content skeleton */}
+          <div className="flex-1 space-y-8">
+            <div className="flex justify-between items-center border-b border-border pb-4">
+              <Skeleton className="h-8 w-24 bg-muted" />
+              <Skeleton className="h-10 w-36 bg-muted rounded-md" />
+            </div>
+            {["Morning", "Afternoon", "Evening"].map((slot) => (
+              <div key={slot} className="space-y-4">
+                <Skeleton className="h-5 w-28 bg-muted" />
+                <Skeleton className="h-24 w-full bg-muted rounded-lg" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!itinerary)
-    return <div className="p-24 text-center font-serif text-muted-foreground">Itinerary not found</div>;
+    return (
+      <div className="p-24 text-center">
+        <h3 className="font-serif text-2xl text-foreground mb-3">Itinerary not found</h3>
+        <p className="text-muted-foreground">This itinerary may have been deleted or you may not have access.</p>
+      </div>
+    );
 
   const days = Array.from({ length: itinerary.totalDays }, (_, i) => i + 1);
   const currentDayItems = (itinerary.items ?? []).filter((item) => item.dayNumber === activeDay);
