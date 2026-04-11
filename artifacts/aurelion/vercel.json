@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd ../.. && PUPPETEER_SKIP_DOWNLOAD=true pnpm install --no-frozen-lockfile && pnpm --filter @workspace/aurelion run build",
+  "outputDirectory": "dist/public",
+  "installCommand": "npm install -g pnpm@10",
+  "framework": null
+}
