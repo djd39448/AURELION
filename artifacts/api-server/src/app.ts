@@ -57,7 +57,22 @@ app.use(
 );
 
 // ---------------------------------------------------------------------------
-// 2. CORS
+// 2. TRUST PROXY
+// ---------------------------------------------------------------------------
+// Railway (and most PaaS providers) terminate TLS at a load balancer and
+// forward requests via an internal proxy. Without this setting, `req.ip`
+// returns the Railway load-balancer IP instead of the real client IP.
+//
+// Effects:
+// - express-rate-limit counts by real client IP (not shared LB IP), so
+//   limits apply per user rather than globally or never.
+// - Session cookies get `secure: true` only for HTTPS requests.
+// - `req.protocol` reflects the original protocol (https) not the internal one.
+// ---------------------------------------------------------------------------
+app.set("trust proxy", 1);
+
+// ---------------------------------------------------------------------------
+// 3. CORS (original §2, renumbered)
 // ---------------------------------------------------------------------------
 // `origin: true` reflects the request's Origin header back as the
 // Access-Control-Allow-Origin value. Combined with `credentials: true`, this
