@@ -12,11 +12,9 @@
  * Zod schema to guarantee a stable contract.
  */
 import { Router, type IRouter } from "express";
-import { createRequire } from "module";
 import { HealthCheckResponse } from "@workspace/api-zod";
 
-const require = createRequire(import.meta.url);
-const { version } = require("../../package.json") as { version: string };
+const version = "1.0.0";
 
 const router: IRouter = Router();
 
