@@ -57,7 +57,7 @@ export default function Home() {
     />
     <div className="flex flex-col w-full">
       {/* Hero Section */}
-      <section className="relative h-[90vh] min-h-[600px] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[90vh] min-h-[400px] sm:min-h-[500px] md:min-h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             src={getImageUrl("/hero.png")}
@@ -76,7 +76,7 @@ export default function Home() {
             <span className="text-primary font-serif tracking-[0.2em] text-sm md:text-base uppercase mb-6 block">
               The Aruba Concierge
             </span>
-            <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl text-foreground mb-8 leading-tight">
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl text-foreground mb-8 leading-tight">
               Precision-crafted <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
                 adventure
@@ -185,7 +185,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             {categories?.map((cat, index) => {
               const gradient =
                 CATEGORY_GRADIENTS[cat.category] ??
@@ -201,7 +201,7 @@ export default function Home() {
                   />
                   <div className="absolute inset-0 border border-primary/10 group-hover:border-primary/30 transition-colors duration-500" />
                   <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-3 md:p-6 text-center">
-                    <h3 className="font-serif text-sm sm:text-base md:text-xl lg:text-2xl text-foreground mb-1 md:mb-2 leading-tight">
+                    <h3 className="font-serif text-xs sm:text-sm md:text-base lg:text-xl text-foreground mb-1 md:mb-2 leading-tight">
                       {cat.category}
                     </h3>
                     <span className="text-primary text-xs tracking-widest uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-300">

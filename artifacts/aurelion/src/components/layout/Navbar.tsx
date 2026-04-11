@@ -66,7 +66,7 @@ export function Navbar() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
               <Compass className="h-6 w-6 text-primary group-hover:text-primary/80 transition-colors" />
-              <span className="font-serif text-2xl tracking-widest text-foreground font-semibold">
+              <span className="font-serif text-xl sm:text-2xl tracking-widest text-foreground font-semibold">
                 AURELION
               </span>
             </Link>
@@ -144,7 +144,7 @@ export function Navbar() {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-foreground hover:text-primary transition-colors p-2"
+              className="text-foreground hover:text-primary transition-colors p-3 min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>

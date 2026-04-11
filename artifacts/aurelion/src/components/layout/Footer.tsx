@@ -17,7 +17,7 @@ export function Footer() {
   return (
     <footer className="bg-background border-t border-border pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8 mb-12">
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="flex items-center gap-2 group mb-6">
               <Compass className="h-6 w-6 text-primary" />
@@ -25,7 +25,7 @@ export function Footer() {
                 AURELION
               </span>
             </Link>
-            <p className="text-muted-foreground text-sm max-w-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm max-w-xs md:max-w-sm leading-relaxed">
               The luxury concierge platform for discerning adventurers. 
               Precision-crafted itineraries for Aruba's most exclusive and wild experiences.
             </p>

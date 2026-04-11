@@ -165,7 +165,7 @@ export default function Activities() {
             <X className="w-3 h-3" /> Clear
           </Button>
         )}
-        <span className="ml-auto text-sm text-muted-foreground">
+        <span className="ml-auto text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
           {activities?.length ?? 0} results
         </span>
       </div>

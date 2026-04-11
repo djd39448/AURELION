@@ -78,13 +78,13 @@ export default function ItineraryNew() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-24">
+    <div className="max-w-3xl mx-auto px-4 py-12 md:py-24">
       <div className="mb-12">
         <span className="text-primary font-serif tracking-widest text-sm uppercase mb-2 block">Plan a Trip</span>
         <h1 className="font-serif text-4xl text-foreground">Create Itinerary</h1>
       </div>
 
-      <div className="bg-card border border-border p-8 rounded-xl shadow-2xl">
+      <div className="bg-card border border-border p-6 md:p-8 rounded-xl shadow-2xl">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
@@ -124,13 +124,13 @@ export default function ItineraryNew() {
               )}
             />
 
-            <div className="pt-4 border-t border-border flex justify-end gap-4">
-              <Button type="button" variant="ghost" onClick={() => setLocation("/dashboard")} className="font-serif tracking-widest uppercase">
+            <div className="pt-4 border-t border-border flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
+              <Button type="button" variant="ghost" onClick={() => setLocation("/dashboard")} className="font-serif tracking-widest uppercase w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-serif uppercase tracking-widest"
+              <Button
+                type="submit"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-serif uppercase tracking-widest w-full sm:w-auto"
                 disabled={createMutation.isPending}
               >
                 {createMutation.isPending ? "Creating..." : "Start Planning"}

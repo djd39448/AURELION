@@ -85,9 +85,9 @@ export default function Pricing() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
         {/* FREE */}
-        <div className="bg-card border border-border p-8 rounded-xl flex flex-col">
+        <div className="bg-card border border-border p-6 md:p-8 rounded-xl flex flex-col">
           <div className="mb-8">
             <h3 className="font-serif text-2xl text-foreground mb-2">Explorer</h3>
             <div className="text-4xl font-serif text-foreground mb-4">$0</div>
@@ -106,7 +106,7 @@ export default function Pricing() {
         </div>
 
         {/* BASIC */}
-        <div className="bg-background border-2 border-primary/50 p-8 rounded-xl flex flex-col relative transform md:-translate-y-4 shadow-2xl shadow-primary/5">
+        <div className="bg-background border-2 border-primary/50 p-6 md:p-8 rounded-xl flex flex-col relative transform md:-translate-y-4 shadow-2xl shadow-primary/5">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-serif uppercase tracking-widest rounded-full flex items-center gap-1">
             <Compass className="w-3 h-3" /> Popular
           </div>
@@ -138,7 +138,7 @@ export default function Pricing() {
         </div>
 
         {/* PREMIUM */}
-        <div className="bg-card border border-border p-8 rounded-xl flex flex-col relative overflow-hidden">
+        <div className="bg-card border border-border p-6 md:p-8 rounded-xl flex flex-col relative overflow-hidden">
           <div className="absolute -right-12 -top-12 opacity-5 pointer-events-none">
             <Shield className="w-48 h-48 text-primary" />
           </div>
