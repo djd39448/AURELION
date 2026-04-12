@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { Users, TrendingUp, MapPin, DollarSign, UserCheck, Calendar } from "lucide-react";
+import { Users, TrendingUp, MapPin, DollarSign, UserCheck, Calendar, Mail } from "lucide-react";
 
 const SESSION_KEY = "aurelion_admin_secret";
 
@@ -25,10 +25,13 @@ type Metrics = {
   revenueEstimate: number;
 };
 
+type WaitlistData = { count: number; emails: string[] };
+
 export default function AdminMetrics() {
   const [secret, setSecret] = useState<string>(() => sessionStorage.getItem(SESSION_KEY) ?? "");
   const [input, setInput] = useState("");
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [waitlist, setWaitlist] = useState<WaitlistData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -37,22 +40,28 @@ export default function AdminMetrics() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/metrics", {
-        headers: { "x-admin-secret": s },
-      });
-      if (res.status === 401) {
+      const [metricsRes, waitlistRes] = await Promise.all([
+        fetch("/api/admin/metrics", { headers: { "x-admin-secret": s } }),
+        fetch("/api/admin/waitlist", { headers: { "x-admin-secret": s } }),
+      ]);
+      if (metricsRes.status === 401) {
         setError("Invalid admin secret.");
         setSecret("");
         sessionStorage.removeItem(SESSION_KEY);
         setMetrics(null);
+        setWaitlist(null);
         return;
       }
-      if (!res.ok) {
+      if (!metricsRes.ok) {
         setError("Failed to load metrics. Please try again.");
         return;
       }
-      const data: Metrics = await res.json();
+      const data: Metrics = await metricsRes.json();
       setMetrics(data);
+      if (waitlistRes.ok) {
+        const wl: WaitlistData = await waitlistRes.json();
+        setWaitlist(wl);
+      }
       setLastUpdated(new Date());
     } catch {
       setError("Network error. Please try again.");
@@ -129,6 +138,12 @@ export default function AdminMetrics() {
           value: `$${metrics.revenueEstimate.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
           sub: "lifetime estimate",
         },
+        {
+          icon: Mail,
+          label: "Waitlist Signups",
+          value: (waitlist?.count ?? 0).toLocaleString(),
+          sub: "pre-launch emails",
+        },
       ]
     : [];
 
@@ -158,6 +173,7 @@ export default function AdminMetrics() {
               sessionStorage.removeItem(SESSION_KEY);
               setSecret("");
               setMetrics(null);
+              setWaitlist(null);
             }}
             className="text-xs text-muted-foreground underline"
           >

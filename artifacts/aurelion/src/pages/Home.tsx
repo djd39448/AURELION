@@ -12,9 +12,10 @@
  * @tier None required
  */
 
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useGetFeaturedActivities, useGetCategories } from "@workspace/api-client-react";
+import { useGetFeaturedActivities, useGetCategories, useGetMe } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
 import { ArrowRight, Compass, Shield, Sparkles } from "lucide-react";
 import { getImageUrl, getActivityImageUrl } from "@/lib/image-url";
@@ -47,6 +48,31 @@ export default function Home() {
   const { data: featured } = useGetFeaturedActivities();
   /** Fetch all activity categories (name + count) for the terrain grid. */
   const { data: categories } = useGetCategories();
+  /** Auth state — banner only shows for logged-out visitors. */
+  const { data: user } = useGetMe();
+
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistStatus, setWaitlistStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  async function handleWaitlistSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!waitlistEmail.trim()) return;
+    setWaitlistStatus("loading");
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: waitlistEmail.trim() }),
+      });
+      if (res.ok) {
+        setWaitlistStatus("success");
+      } else {
+        setWaitlistStatus("error");
+      }
+    } catch {
+      setWaitlistStatus("error");
+    }
+  }
 
   return (
     <>
@@ -107,6 +133,51 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* Waitlist Banner — shown to logged-out visitors only */}
+      {!user && (
+        <section className="py-10 bg-card border-b border-border/60">
+          <div className="max-w-2xl mx-auto px-4 text-center">
+            <p className="text-primary font-serif tracking-[0.15em] text-xs uppercase mb-2">
+              Coming Soon
+            </p>
+            <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-3">
+              AURELION is launching soon — get early access to AI-powered Aruba itineraries.
+            </h2>
+            {waitlistStatus === "success" ? (
+              <p className="text-primary font-serif text-base mt-4">
+                You're on the list! We'll be in touch.
+              </p>
+            ) : (
+              <form
+                onSubmit={handleWaitlistSubmit}
+                className="flex flex-col sm:flex-row gap-3 justify-center mt-5"
+              >
+                <input
+                  type="email"
+                  required
+                  value={waitlistEmail}
+                  onChange={(e) => setWaitlistEmail(e.target.value)}
+                  placeholder="Your email address"
+                  className="h-12 flex-1 max-w-sm rounded-none border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <Button
+                  type="submit"
+                  disabled={waitlistStatus === "loading"}
+                  className="h-12 rounded-none bg-primary text-primary-foreground hover:bg-primary/90 font-serif tracking-widest px-6 disabled:opacity-60"
+                >
+                  {waitlistStatus === "loading" ? "Joining…" : "Join the Waitlist"}
+                </Button>
+              </form>
+            )}
+            {waitlistStatus === "error" && (
+              <p className="text-destructive text-sm mt-2">
+                Something went wrong. Please try again.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Featured Activities */}
       <section className="py-16 md:py-24 bg-background border-b border-border/50">

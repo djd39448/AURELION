@@ -21,7 +21,7 @@
  * keyword matching against the 6 predefined AURELION categories.
  */
 import { Router } from "express";
-import { db, activitiesTable, usersTable, itinerariesTable } from "@workspace/db";
+import { db, activitiesTable, usersTable, itinerariesTable, waitlistTable } from "@workspace/db";
 import { eq, ne, gte, sql } from "drizzle-orm";
 import { AdminCreateActivityBody, AdminUpdateActivityParams, AdminUpdateActivityBody, AdminDeleteActivityParams, AdminIngestUrlBody } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
@@ -291,6 +291,31 @@ router.get("/admin/metrics", async (req, res): Promise<void> => {
     });
   } catch (err) {
     req.log.error({ err }, "Error fetching admin metrics");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * @route GET /api/admin/waitlist
+ * @auth Required — `x-admin-secret` header must match the `ADMIN_SECRET` env var.
+ * @returns {{ count: number; emails: string[] }} Waitlist count and email list
+ * @throws {401} Missing or invalid ADMIN_SECRET header
+ * @throws {500} Internal server error
+ */
+router.get("/admin/waitlist", async (req, res): Promise<void> => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret || req.headers["x-admin-secret"] !== secret) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const rows = await db
+      .select({ email: waitlistTable.email, createdAt: waitlistTable.createdAt })
+      .from(waitlistTable)
+      .orderBy(waitlistTable.createdAt);
+    res.json({ count: rows.length, emails: rows.map((r) => r.email) });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching waitlist");
     res.status(500).json({ error: "Internal server error" });
   }
 });

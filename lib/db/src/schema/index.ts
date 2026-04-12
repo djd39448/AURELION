@@ -50,3 +50,4 @@ export * from "./itineraries";
 export * from "./purchases";
 export * from "./chat";
 export * from "./user-memories";
+export * from "./waitlist";

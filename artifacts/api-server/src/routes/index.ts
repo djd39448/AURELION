@@ -37,6 +37,7 @@ import purchasesRouter from "./purchases";
 import adminRouter from "./admin";
 import dashboardRouter from "./dashboard";
 import accountRouter from "./account";
+import waitlistRouter from "./waitlist";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(purchasesRouter);
 router.use(adminRouter);
 router.use(dashboardRouter);
 router.use(accountRouter);
+router.use(waitlistRouter);
 
 export default router;
