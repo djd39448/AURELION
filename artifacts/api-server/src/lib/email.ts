@@ -102,7 +102,7 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
 
   try {
     const { error } = await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "hello@aurelion.com",
       to,
       subject: "Welcome to AURELION — Your Aruba adventure starts here",
       html,
