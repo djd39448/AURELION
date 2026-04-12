@@ -51,6 +51,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
       role: usersTable.role,
       tier: usersTable.tier,
       hasGeneratedItinerary: usersTable.hasGeneratedItinerary,
+      createdAt: usersTable.createdAt,
     }).from(usersTable).where(eq(usersTable.id, userId));
 
     if (!user) {
@@ -59,7 +60,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
       return;
     }
     const effectiveTier = user.role === "admin" ? "premium" : user.tier;
-    res.json({ ...user, tier: effectiveTier, isAuthenticated: true });
+    res.json({ ...user, tier: effectiveTier, createdAt: user.createdAt.toISOString(), isAuthenticated: true });
   } catch (err) {
     req.log.error({ err }, "Error fetching user");
     res.status(500).json({ error: "Internal server error" });

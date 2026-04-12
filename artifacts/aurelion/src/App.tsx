@@ -38,6 +38,7 @@ import Admin from "@/pages/Admin";
 import AdminMetrics from "@/pages/AdminMetrics";
 import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
+import Account from "@/pages/Account";
 
 /**
  * Singleton TanStack QueryClient instance.
@@ -59,6 +60,7 @@ const queryClient = new QueryClient();
  *  - /auth/login           Login         (public, guest-only intent)
  *  - /auth/register        Register      (public, guest-only intent)
  *  - /dashboard            Dashboard     (auth required)
+ *  - /account              Account       (auth required)
  *  - /itineraries/new      ItineraryNew  (auth required)
  *  - /itineraries/:id      ItineraryDetail (auth required)
  *  - /chat/:sessionId      Chat          (auth + premium tier required)
@@ -87,6 +89,7 @@ function Router() {
           <Route path="/itineraries/new" component={ItineraryNew} />
           <Route path="/itineraries/:id" component={ItineraryDetail} />
           <Route path="/chat/:sessionId" component={Chat} />
+          <Route path="/account" component={Account} />
           <Route path="/admin" component={Admin} />
           <Route path="/admin/metrics" component={AdminMetrics} />
           {/* Catch-all: renders when no route above matches */}

@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AccountItinerary,
   Activity,
   ActivityDetail,
   AddItineraryItemBody,
@@ -2528,6 +2529,82 @@ export function useGetDashboardSummary<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetDashboardSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List account itineraries (newest first)
+ */
+export const getListAccountItinerariesUrl = () => {
+  return `/api/account/itineraries`;
+};
+
+export const listAccountItineraries = async (
+  options?: RequestInit,
+): Promise<AccountItinerary[]> => {
+  return customFetch<AccountItinerary[]>(getListAccountItinerariesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAccountItinerariesQueryKey = () => {
+  return [`/api/account/itineraries`] as const;
+};
+
+export const getListAccountItinerariesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAccountItineraries>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountItineraries>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAccountItinerariesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAccountItineraries>>
+  > = ({ signal }) => listAccountItineraries({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountItineraries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAccountItinerariesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAccountItineraries>>
+>;
+export type ListAccountItinerariesQueryError = ErrorType<void>;
+
+/**
+ * @summary List account itineraries (newest first)
+ */
+
+export function useListAccountItineraries<
+  TData = Awaited<ReturnType<typeof listAccountItineraries>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountItineraries>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAccountItinerariesQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

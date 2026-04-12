@@ -17,6 +17,7 @@
  * | purchases     | `/purchases/*`       | Required*     | Stripe checkout and webhook processing          |
  * | admin         | `/admin/*`           | Admin only    | Activity management and URL ingestion           |
  * | dashboard     | `/dashboard/*`       | Required      | Aggregate stats for the user dashboard          |
+ * | account       | `/account/*`         | Required      | Account profile and itinerary history           |
  *
  * *purchases/webhook is unauthenticated but verified via Stripe signature.
  *
@@ -33,6 +34,7 @@ import chatRouter from "./chat";
 import purchasesRouter from "./purchases";
 import adminRouter from "./admin";
 import dashboardRouter from "./dashboard";
+import accountRouter from "./account";
 
 const router: IRouter = Router();
 
@@ -44,5 +46,6 @@ router.use(chatRouter);
 router.use(purchasesRouter);
 router.use(adminRouter);
 router.use(dashboardRouter);
+router.use(accountRouter);
 
 export default router;

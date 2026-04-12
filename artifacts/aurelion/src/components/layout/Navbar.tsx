@@ -120,6 +120,10 @@ export function Navbar() {
                     <User className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation("/account")} className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Account</span>
+                  </DropdownMenuItem>
                   {user.role === "admin" && (
                     <DropdownMenuItem onClick={() => setLocation("/admin")} className="cursor-pointer">
                       <Compass className="mr-2 h-4 w-4" />
@@ -185,6 +189,17 @@ export function Navbar() {
                     }`}
                   >
                     My Dashboard
+                  </Link>
+                  <Link
+                    href="/account"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`block px-3 py-4 text-base uppercase tracking-widest rounded-md transition-colors ${
+                      location === "/account"
+                        ? "text-primary bg-primary/5"
+                        : "text-foreground hover:bg-primary/5"
+                    }`}
+                  >
+                    My Account
                   </Link>
                   {user.role === "admin" && (
                     <Link

@@ -14,4 +14,5 @@ export interface UserSession {
   tier?: string;
   isAuthenticated: boolean;
   hasGeneratedItinerary?: boolean;
+  createdAt?: Date;
 }

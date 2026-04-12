@@ -121,6 +121,7 @@ export const GetMeResponse = zod.object({
   tier: zod.string().optional(),
   isAuthenticated: zod.boolean(),
   hasGeneratedItinerary: zod.boolean().optional(),
+  createdAt: zod.coerce.date().optional(),
 });
 
 /**
@@ -148,6 +149,7 @@ export const LoginResponse = zod.object({
   tier: zod.string().optional(),
   isAuthenticated: zod.boolean(),
   hasGeneratedItinerary: zod.boolean().optional(),
+  createdAt: zod.coerce.date().optional(),
 });
 
 /**
@@ -551,3 +553,16 @@ export const GetDashboardSummaryResponse = zod.object({
   ),
   hasPremium: zod.boolean(),
 });
+
+/**
+ * @summary List account itineraries (newest first)
+ */
+export const ListAccountItinerariesResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  createdAt: zod.coerce.date(),
+  tierType: zod.string(),
+});
+export const ListAccountItinerariesResponse = zod.array(
+  ListAccountItinerariesResponseItem,
+);

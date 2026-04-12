@@ -76,6 +76,14 @@ export interface UserSession {
   tier?: string;
   isAuthenticated: boolean;
   hasGeneratedItinerary?: boolean;
+  createdAt?: string;
+}
+
+export interface AccountItinerary {
+  id: number;
+  title: string;
+  createdAt: string;
+  tierType: string;
 }
 
 export interface RegisterBody {
