@@ -454,6 +454,47 @@ const vendors = [
   },
 
   /* =====================================================================
+   * 12. ARUBA CONSERVATION FOUNDATION (ACF) — Arikok National Park
+   * Source: acf.aw | Official park authority, ranger-guided hikes
+   * Scraped/verified: April 2026
+   * ===================================================================== */
+  {
+    name: "Aruba Conservation Foundation",
+    description:
+      "Official managing authority of Arikok National Park — Aruba's only national park, covering 18% of the island. Provides self-guided park access and ranger-led hikes to Arikok's key sites: Fontein Cave (Arawak rock art), Quadirikiri Cave (bats), Huliba Cave (Tunnel of Love), the Natural Pool (Conchi), Jamanota Hill (Aruba's highest point), and miles of hiking trails.",
+    websiteUrl: "https://www.acf.aw/",
+    email: "reservations@acf.aw",
+    phone: null, // Guided hike reservations via email only
+    whatsapp: null,
+    confidenceScore: 0.90,
+    sourceUrl: "https://www.acf.aw/experiences",
+    bestBookingMethod:
+      "Pay park entrance fee ($22/adult, free for under-17) at the San Fuego Visitor Center (main entrance, 8 AM–3:30 PM) or Vader Piet entrance (8:30 AM–3 PM). Guided hike reservations via reservations@acf.aw — book 3–7 days ahead; max 10 participants per hike.",
+    whenToBook:
+      "Self-guided entry: walk-in, no advance booking. Ranger-guided hikes: book 3–7 days ahead. Morning visits are cooler and have better wildlife activity. The park closes for new admissions at 3:30 PM.",
+    whatToSay:
+      "Ask rangers at the visitor center about current trail conditions before heading to the Natural Pool — the terrain is rough volcanic rock. For cave visits, rangers at San Fuego can direct you to Fontein Cave for the indigenous Arawak rock art.",
+    insiderTips: [
+      "Arikok covers 18% of Aruba — bring 2L of water per person for full-day exploration",
+      "Fontein Cave has Arawak Indian rock drawings from circa 1000 AD — Aruba's most significant pre-colonial archaeological site",
+      "Quadirikiri Cave has natural ceiling holes that create dramatic light shafts; flashlights are prohibited to protect the bat colony",
+      "The Natural Pool (Conchi) is accessible via a 3–4 hour round-trip hike on volcanic rock from within the park",
+      "Jamanota Hill (188m) is the highest point in Aruba — ranger-guided hikes offer the best panoramic views on the island",
+      "Annual passes available at the San Fuego Visitor Center — worth it for multi-day or repeat visitors",
+    ],
+    warnings: [
+      "Natural Pool (Conchi) involves 3–4 hours of hiking on rough lava rock — not suitable without proper footwear and fitness",
+      "Huliba Cave ('Tunnel of Love') reopening status unconfirmed as of April 2026 — verify with ACF before visiting",
+      "Park admission closes at 3:30 PM (San Fuego) / 3 PM (Vader Piet) — plan accordingly",
+      "No food vendors inside the park — bring substantial food and water",
+      "Natural Pool has ocean surge through the lava rock channel — dangerous for non-swimmers and in rough sea conditions",
+    ],
+    bookingConfidence: "0.90",
+    intelligenceReport:
+      "The Aruba Conservation Foundation manages Arikok National Park, Aruba's most significant natural and cultural site. At $22 per adult, it's one of the highest-value experiences on the island: two cave systems, 1000-year-old Arawak rock art, the legendary Natural Pool, the island's highest hiking trails, and intact desert and coastal ecosystems.\n\nFor independent explorers, Arikok is the definitive Aruba experience — genuinely wild, untouched, and far from the resort strip. Ranger-guided hikes ($25/person + $22 entry) cover four trail types: Rooi Tambu & Dos Playa (7.5km, 3.5 hrs, hard), Jamanota Hill (4.8km, 2 hrs, hard), Miralamar (2km, 1.5 hrs, easy), and Cunucu Arikok (5km, 1.5 hrs, easy). Guided hikes are capped at 10 participants for an intimate experience.\n\nKey data gap: Huliba Cave ('Tunnel of Love') reopening status unconfirmed as of April 2026. Contact reservations@acf.aw to verify before recommending. The Natural Pool is accessible inside the park but guided 4x4 tours from ABC Tours ($130), Pelican ($99), or Delphi ($89) are recommended for safety over the self-guided hike.",
+  },
+
+  /* =====================================================================
    * 11. RANCHO NOTORIOUS
    * Source: ranchonotorious.com | TripAdvisor top-rated
    * Scraped: April 2026
@@ -497,6 +538,87 @@ const vendors = [
     bookingConfidence: "0.91",
     intelligenceReport:
       "Rancho Notorious is Aruba's premier horseback riding operation, offering an unmatched 7 different trail routes ranging from a 1-hour intro ride ($105) to a 2.5-hour lighthouse coastal epic ($210, Mondays only). Their key differentiator is route diversity — no other ranch in Aruba offers this many options, allowing repeat visitors to experience entirely new terrain each time.\n\nThe operation prioritizes quality: small groups (2-10), multi-lingual guides, free hotel transportation, and routes that range from beginner-friendly (Hidden Lagoon, Urirama Cove) to advanced with galloping (2-Hour Advanced, Alto Vista Chapel, Lighthouse). The Sunset rides are their most romantic offering — the 5:30 PM Sunset ride ($130) reaches a hilltop with 360-degree views, while the 5 PM Rock Formation & North Coast ride ($145) is the most scenic overall.\n\nFor experienced riders, the 2-Hour Advanced Ride ($125, 7 AM or 10 AM) is the only tour where galloping is permitted. The Monday-only Northeast Coast & Lighthouse ride ($210, 6:30 AM) is the crown jewel — 2.5 hours through sand dunes and coastal cliffs. All prices are plus 7% tax. Located in Boroncana, Noord. Call +297 699-5492 or book online.",
+  },
+
+  /* =====================================================================
+   * 12. NATIVE DIVERS ARUBA
+   * Source: nativedivers.com | PADI certified | Scraped April 2026
+   * ===================================================================== */
+  {
+    name: "Native Divers Aruba",
+    description:
+      "PADI-certified dive center at Marriott Surf Club, Palm Beach. Offers single-tank and two-tank boat dives to Aruba's world-class wrecks and reefs, PADI certifications from Resort Course to Open Water, and specialty diving (night, wreck, drift). Known for personalized service — 'you come as a guest, leave as a friend.'",
+    websiteUrl: "https://www.nativedivers.com/",
+    email: "nativedivers89@gmail.com",
+    phone: "+297 586-4763",
+    whatsapp: null,
+    confidenceScore: 0.88,
+    sourceUrl: "https://www.nativedivers.com/",
+    bestBookingMethod:
+      "Book via their website contact form at nativedivers.com or email nativedivers89@gmail.com. Phone +297 586-4763 (main) or cell +297 593-3960. Located on the beach at the Marriott Surf Club, Palm Beach.",
+    whenToBook:
+      "Book 1-2 days ahead for standard dives. PADI certification courses (1 week for Open Water) need to be planned around your stay. Morning dives have best visibility. Flexible scheduling available.",
+    whatToSay:
+      "Mention your certification level when booking — they adjust dives to your experience. Ask about the Antilla wreck ($80-$100 single tank) — it's one of the largest and most spectacular WWII shipwrecks in the Caribbean. Ask about their 10 specialty courses if you want to level up.",
+    insiderTips: [
+      "Single tank dive: $80-$100 depending on equipment rental needs",
+      "Two tank dive: $100-$125 — best value for a full morning of diving",
+      "PADI Resort Course for non-certified divers: $100, 3 hours — try scuba without committing to full certification",
+      "Open Water Certification: $450 for a full week — plan this as a dedicated activity for your trip",
+      "Refresher course for lapsed divers: $100 — great for divers who haven't been in the water for years",
+      "10 specialty courses available: Night Diver, Wreck Diver, Drift Diver, Deep Diver, and more",
+      "Located directly at the Marriott Surf Club — easy beach access and central Palm Beach location",
+      "Aruba's year-round 82°F water and 60-100 ft visibility make it one of the Caribbean's best dive destinations",
+    ],
+    warnings: [
+      "Gmail email address is informal but confirmed as their official contact",
+      "Certification courses require multiple days — plan accordingly when booking your stay",
+      "The Antilla wreck is at 18-30m — Advanced OW certification recommended for the full wreck experience",
+      "Snorkeling available at $25 but snorkel boats (De Palm, Pelican) offer better snorkel-specific experiences",
+    ],
+    bookingConfidence: "0.88",
+    intelligenceReport:
+      "Native Divers Aruba is a PADI-certified dive center operating directly from the beach at the Marriott Surf Club on Palm Beach — a central location that makes logistics easy for hotel-based guests. Their pricing is clear and competitive: single-tank dives run $80-$100 depending on whether you need equipment, and the two-tank dive at $100-$125 is the best value for a full morning on the reefs.\n\nFor non-certified travelers, their PADI Resort Course ($100, 3 hours) is the right recommendation — it covers everything needed to do a supervised reef dive without committing to full certification. For those who want full certification, their Open Water course at $450 for a week is priced appropriately for Aruba.\n\nAruba is one of the Caribbean's top wreck-diving destinations with 11 wrecks and 20+ dive sites. The standout is the Antilla — a 400-foot German WWII freighter and one of the largest shipwrecks in the Caribbean — accessible by boat from Palm Beach. Year-round water temperature of 82°F and 60-100 foot visibility make conditions excellent. Native Divers' personal 'guest not customer' philosophy sets them apart from larger dive operators. Contact: +297 586-4763 / nativedivers89@gmail.com.",
+  },
+
+  /* =====================================================================
+   * 13. PALM BEACH DIVERS
+   * Source: palmbeachdiversaruba.com | PADI 2014 | 4.9/5 (254 reviews)
+   * Scraped April 2026
+   * ===================================================================== */
+  {
+    name: "Palm Beach Divers",
+    description:
+      "PADI-certified dive center (since 2014) with a 4.9/5 Google rating from 254 reviews. Specializes in small-group wreck and reef boat dives with a fast custom dive boat. Morning 2-tank dives (8:30 AM-12 PM) and afternoon intro/refresher/single-tank dives (1:30-4 PM). SDI affiliated. Closed Sundays.",
+    websiteUrl: "https://www.palmbeachdiversaruba.com/",
+    email: "info@palmbeachdiversaruba.com",
+    phone: "+297 742-3636",
+    whatsapp: null,
+    confidenceScore: 0.85,
+    sourceUrl: "https://www.palmbeachdiversaruba.com/",
+    bestBookingMethod:
+      "Book online through their website portal at palmbeachdiversaruba.com. Email info@palmbeachdiversaruba.com or call +297 742-3636. Closed Sundays.",
+    whenToBook:
+      "Book 2-3 days ahead. The morning 2-tank dive (8:30 AM) offers the most complete experience. Small group policy means spots fill fast. Avoid Sundays — closed.",
+    whatToSay:
+      "Mention your certification level and which wrecks you want to dive. Ask about small group sizes — their policy of limited group sizes ensures more personal attention underwater.",
+    insiderTips: [
+      "4.9/5 from 254 Google reviews — one of the highest-rated dive operations in Aruba",
+      "Morning 2-tank dive: 8:30 AM - 12:00 PM — the best way to do two different sites in one morning",
+      "Afternoon options: 1:30 PM - 4:00 PM for intro dive, refresher, or single-tank dives",
+      "Small group policy — more personal attention from guides underwater vs. larger operators",
+      "ScubaPro equipment used — professional gear standard maintained",
+      "Fast custom dive boat means more time at the dive site, less time in transit",
+      "SDI affiliated in addition to PADI — two major certification pathways available",
+    ],
+    warnings: [
+      "Closed Sundays — plan accordingly",
+      "Specific pricing not listed on website — contact for current rates",
+      "Small group capacity means earlier bookings are essential in high season (Dec-Apr)",
+    ],
+    bookingConfidence: "0.85",
+    intelligenceReport:
+      "Palm Beach Divers is a PADI-certified dive center with an exceptional 4.9/5 rating from 254 Google reviews — one of the highest satisfaction scores of any dive operator in Aruba. Their small-group policy is the key differentiator: by limiting group sizes, every diver gets more personal attention from their guides, which is especially valuable for less experienced divers exploring wrecks.\n\nTheir morning 2-tank dive schedule (8:30 AM-12:00 PM) is the optimal format — two different dive sites back-to-back in the morning when visibility is at its best. The afternoon schedule (1:30-4:00 PM) accommodates intro dives, refresher courses, and single-tank options for those with limited time. They use ScubaPro equipment and have a fast custom dive boat that maximizes bottom time at the site.\n\nAruba's dive highlights accessible from Palm Beach include the Antilla (largest WWII wreck in the Caribbean, 400 feet), the Jane Sea wreck, and the Pedernales wreck — three distinct experiences that can fill multiple dive days. Year-round 82°F water and 60-100 ft visibility make Aruba's wrecks diveable by divers of all certification levels. Contact: +297 742-3636 / info@palmbeachdiversaruba.com.",
   },
 ];
 
@@ -580,6 +702,7 @@ async function seed() {
   console.log("   Catamaran/Snorkel:  De Palm, Pelican, Jolly Pirates, Delphi, Octopus");
   console.log("   Wind Sports:        Aruba Active Vacations");
   console.log("   Horseback Riding:   Rancho Notorious");
+  console.log("   Scuba / Diving:     Native Divers Aruba, Palm Beach Divers");
 }
 
 /* =========================================================================

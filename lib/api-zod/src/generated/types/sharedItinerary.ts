@@ -5,15 +5,12 @@
  * AURELION - Luxury Aruba Adventure Planning Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { ItineraryItemWithActivity } from "./itineraryItemWithActivity";
 
-export interface Itinerary {
+export interface SharedItinerary {
   id: number;
-  userId: number;
   title: string;
   totalDays: number;
   tierType: string;
-  status: string;
-  shareToken?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  items: ItineraryItemWithActivity[];
 }

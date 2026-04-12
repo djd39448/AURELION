@@ -29,6 +29,7 @@ import {
   useListActivities,
   useGetMe,
   exportItinerary,
+  useShareItinerary,
 } from "@workspace/api-client-react";
 import { printItineraryPDF } from "@/lib/pdf-export";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Clock, Download, MapPin, Plus, Trash2 } from "lucide-react";
+import { Clock, Download, MapPin, Plus, Share2, Trash2 } from "lucide-react";
 import { PremiumLock } from "@/components/ui/premium-lock";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,6 +66,10 @@ export default function ItineraryDetail() {
   const [search, setSearch] = useState("");
   /** True while the PDF export is being prepared. */
   const [exporting, setExporting] = useState(false);
+  /** Whether the share modal is open. */
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  /** The generated share URL, set after a successful share call. */
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
 
   // -- Queries --
   /** Query: current user profile (for tier checks). */
@@ -81,6 +86,8 @@ export default function ItineraryDetail() {
   const addMutation = useAddItineraryItem();
   /** Mutation: remove an activity item from this itinerary. */
   const removeMutation = useRemoveItineraryItem();
+  /** Mutation: generate (or retrieve) a public share link. */
+  const shareMutation = useShareItinerary();
 
   // -- Tier-based feature flags --
   const userTier = user?.tier ?? "free";
@@ -122,6 +129,31 @@ export default function ItineraryDetail() {
         onError: () => toast({ title: "Error removing activity", variant: "destructive" }),
       }
     );
+  };
+
+  /**
+   * Generate a public share link and open the share modal.
+   * Idempotent — calling this multiple times returns the same token.
+   */
+  const handleShare = () => {
+    shareMutation.mutate(
+      { id },
+      {
+        onSuccess: (data) => {
+          setShareUrl(data.shareUrl);
+          setIsShareOpen(true);
+        },
+        onError: () => toast({ title: "Failed to generate share link", variant: "destructive" }),
+      }
+    );
+  };
+
+  /** Copy the share URL to clipboard and notify the user. */
+  const handleCopyLink = () => {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({ title: "Link copied to clipboard!" });
+    });
   };
 
   /**
@@ -195,6 +227,31 @@ export default function ItineraryDetail() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+      {/* Share modal */}
+      <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl">Share Your Itinerary</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mb-4">
+            Anyone with this link can view your itinerary without needing to sign in.
+          </p>
+          <div className="flex gap-2">
+            <input
+              readOnly
+              value={shareUrl ?? ""}
+              className="flex-1 text-sm bg-background border border-border rounded-md px-3 py-2 text-foreground truncate"
+            />
+            <Button
+              onClick={handleCopyLink}
+              className="shrink-0 bg-primary text-primary-foreground font-serif uppercase tracking-widest text-xs"
+            >
+              Copy
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Breadcrumbs items={[
         { label: "Dashboard", href: "/dashboard" },
         { label: "Itineraries", href: "/dashboard" },
@@ -226,8 +283,8 @@ export default function ItineraryDetail() {
         ))}
       </div>
 
-      {/* Mobile export */}
-      <div className="mb-6 md:hidden">
+      {/* Mobile export + share */}
+      <div className="mb-6 md:hidden space-y-2">
         {canExport ? (
           <Button
             onClick={handleExport}
@@ -249,6 +306,15 @@ export default function ItineraryDetail() {
             </Link>
           </Button>
         )}
+        <Button
+          onClick={handleShare}
+          variant="outline"
+          className="w-full border-primary/50 text-primary font-serif uppercase tracking-widest"
+          disabled={shareMutation.isPending}
+        >
+          <Share2 className="w-4 h-4 mr-2" />
+          {shareMutation.isPending ? "Generating link..." : "Share Itinerary"}
+        </Button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">
@@ -276,8 +342,8 @@ export default function ItineraryDetail() {
             </div>
           </div>
 
-          <div className="bg-card border border-border p-6 rounded-xl">
-            <h3 className="font-serif text-lg mb-4">Export & Share</h3>
+          <div className="bg-card border border-border p-6 rounded-xl space-y-3">
+            <h3 className="font-serif text-lg mb-1">Export & Share</h3>
             {canExport ? (
               <Button
                 onClick={handleExport}
@@ -301,6 +367,15 @@ export default function ItineraryDetail() {
                 </Button>
               </PremiumLock>
             )}
+            <Button
+              onClick={handleShare}
+              variant="outline"
+              className="w-full border-primary/50 text-primary font-serif uppercase tracking-widest"
+              disabled={shareMutation.isPending}
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              {shareMutation.isPending ? "Generating link..." : "Share Itinerary"}
+            </Button>
           </div>
         </div>
 

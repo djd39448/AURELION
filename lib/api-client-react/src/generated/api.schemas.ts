@@ -104,6 +104,7 @@ export interface Itinerary {
   totalDays: number;
   tierType: string;
   status: string;
+  shareToken?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -126,8 +127,22 @@ export interface ItineraryDetail {
   totalDays: number;
   tierType: string;
   status: string;
+  shareToken?: string | null;
   createdAt: string;
   updatedAt: string;
+  items: ItineraryItemWithActivity[];
+}
+
+export interface ShareResponse {
+  shareToken: string;
+  shareUrl: string;
+}
+
+export interface SharedItinerary {
+  id: number;
+  title: string;
+  totalDays: number;
+  tierType: string;
   items: ItineraryItemWithActivity[];
 }
 

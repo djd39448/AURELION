@@ -412,6 +412,50 @@ paths:
         "403":
           description: Tier upgrade required
 
+  /itineraries/{id}/share:
+    post:
+      operationId: shareItinerary
+      tags: [itineraries]
+      summary: Generate a public share link for an itinerary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Share link generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+
+  /shared/{token}:
+    get:
+      operationId: getSharedItinerary
+      tags: [shared]
+      summary: Public shared itinerary view (no auth required)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Shared itinerary data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedItinerary"
+        "404":
+          description: Not found
+
   /chat/sessions:
     get:
       operationId: listChatSessions
@@ -849,6 +893,9 @@ components:
           type: string
         status:
           type: string
+        shareToken:
+          type: string
+          nullable: true
         createdAt:
           type: string
         updatedAt:
@@ -878,6 +925,9 @@ components:
           type: string
         status:
           type: string
+        shareToken:
+          type: string
+          nullable: true
         createdAt:
           type: string
         updatedAt:
@@ -895,6 +945,39 @@ components:
         - status
         - createdAt
         - updatedAt
+        - items
+
+    ShareResponse:
+      type: object
+      properties:
+        shareToken:
+          type: string
+        shareUrl:
+          type: string
+      required:
+        - shareToken
+        - shareUrl
+
+    SharedItinerary:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        totalDays:
+          type: integer
+        tierType:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryItemWithActivity"
+      required:
+        - id
+        - title
+        - totalDays
+        - tierType
         - items
 
     ItineraryItem:

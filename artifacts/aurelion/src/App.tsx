@@ -39,6 +39,7 @@ import AdminMetrics from "@/pages/AdminMetrics";
 import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
 import Account from "@/pages/Account";
+import SharedItinerary from "@/pages/SharedItinerary";
 
 /**
  * Singleton TanStack QueryClient instance.
@@ -66,6 +67,7 @@ const queryClient = new QueryClient();
  *  - /chat/:sessionId      Chat          (auth + premium tier required)
  *  - /admin                Admin         (auth + admin role required)
  *  - /admin/metrics        AdminMetrics  (ADMIN_SECRET header required, not in nav)
+ *  - /shared/:token        SharedItinerary (public, no auth required)
  *  - *                     NotFound      (catch-all 404)
  *
  * Wouter's `<Switch>` renders only the first matching route.
@@ -92,6 +94,7 @@ function Router() {
           <Route path="/account" component={Account} />
           <Route path="/admin" component={Admin} />
           <Route path="/admin/metrics" component={AdminMetrics} />
+          <Route path="/shared/:token" component={SharedItinerary} />
           {/* Catch-all: renders when no route above matches */}
           <Route component={NotFound} />
         </Switch>

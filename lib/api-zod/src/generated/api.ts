@@ -162,6 +162,7 @@ export const ListItinerariesResponseItem = zod.object({
   totalDays: zod.number(),
   tierType: zod.string(),
   status: zod.string(),
+  shareToken: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -189,6 +190,7 @@ export const GetItineraryResponse = zod.object({
   totalDays: zod.number(),
   tierType: zod.string(),
   status: zod.string(),
+  shareToken: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
   items: zod.array(
@@ -240,6 +242,7 @@ export const UpdateItineraryResponse = zod.object({
   totalDays: zod.number(),
   tierType: zod.string(),
   status: zod.string(),
+  shareToken: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -311,6 +314,7 @@ export const ExportItineraryResponse = zod.object({
     totalDays: zod.number(),
     tierType: zod.string(),
     status: zod.string(),
+    shareToken: zod.string().nullish(),
     createdAt: zod.string(),
     updatedAt: zod.string(),
     items: zod.array(
@@ -343,6 +347,59 @@ export const ExportItineraryResponse = zod.object({
   }),
   tierType: zod.string(),
   exportedAt: zod.string(),
+});
+
+/**
+ * @summary Generate a public share link for an itinerary
+ */
+export const ShareItineraryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ShareItineraryResponse = zod.object({
+  shareToken: zod.string(),
+  shareUrl: zod.string(),
+});
+
+/**
+ * @summary Public shared itinerary view (no auth required)
+ */
+export const GetSharedItineraryParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const GetSharedItineraryResponse = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  totalDays: zod.number(),
+  tierType: zod.string(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      itineraryId: zod.number(),
+      activityId: zod.number(),
+      dayNumber: zod.number(),
+      timeSlot: zod.string(),
+      notes: zod.string().nullish(),
+      activity: zod.object({
+        id: zod.number(),
+        title: zod.string(),
+        category: zod.string(),
+        difficulty: zod.string(),
+        durationMinutes: zod.number(),
+        priceLow: zod.number(),
+        priceHigh: zod.number(),
+        location: zod.string(),
+        imageUrl: zod.string().nullish(),
+        reviewSummary: zod.string().nullish(),
+        tags: zod.array(zod.string()),
+        description: zod.string(),
+        whatToBring: zod.string().nullish(),
+        whatToExpect: zod.string().nullish(),
+        createdAt: zod.string(),
+      }),
+    }),
+  ),
 });
 
 /**
@@ -540,6 +597,7 @@ export const GetDashboardSummaryResponse = zod.object({
       totalDays: zod.number(),
       tierType: zod.string(),
       status: zod.string(),
+      shareToken: zod.string().nullish(),
       createdAt: zod.string(),
       updatedAt: zod.string(),
     }),

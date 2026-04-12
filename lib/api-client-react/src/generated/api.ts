@@ -42,6 +42,8 @@ import type {
   RegisterBody,
   ScrapedActivityPreview,
   SendMessageBody,
+  ShareResponse,
+  SharedItinerary,
   UpdateItineraryBody,
   UpdateItineraryItemBody,
   UserSession,
@@ -1535,6 +1537,178 @@ export function useExportItinerary<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getExportItineraryQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Generate a public share link for an itinerary
+ */
+export const getShareItineraryUrl = (id: number) => {
+  return `/api/itineraries/${id}/share`;
+};
+
+export const shareItinerary = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ShareResponse> => {
+  return customFetch<ShareResponse>(getShareItineraryUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getShareItineraryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof shareItinerary>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof shareItinerary>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["shareItinerary"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof shareItinerary>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return shareItinerary(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ShareItineraryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof shareItinerary>>
+>;
+
+export type ShareItineraryMutationError = ErrorType<void>;
+
+/**
+ * @summary Generate a public share link for an itinerary
+ */
+export const useShareItinerary = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof shareItinerary>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof shareItinerary>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getShareItineraryMutationOptions(options));
+};
+
+/**
+ * @summary Public shared itinerary view (no auth required)
+ */
+export const getGetSharedItineraryUrl = (token: string) => {
+  return `/api/shared/${token}`;
+};
+
+export const getSharedItinerary = async (
+  token: string,
+  options?: RequestInit,
+): Promise<SharedItinerary> => {
+  return customFetch<SharedItinerary>(getGetSharedItineraryUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSharedItineraryQueryKey = (token: string) => {
+  return [`/api/shared/${token}`] as const;
+};
+
+export const getGetSharedItineraryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSharedItinerary>>,
+  TError = ErrorType<void>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSharedItinerary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSharedItineraryQueryKey(token);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSharedItinerary>>
+  > = ({ signal }) => getSharedItinerary(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSharedItinerary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSharedItineraryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSharedItinerary>>
+>;
+export type GetSharedItineraryQueryError = ErrorType<void>;
+
+/**
+ * @summary Public shared itinerary view (no auth required)
+ */
+
+export function useGetSharedItinerary<
+  TData = Awaited<ReturnType<typeof getSharedItinerary>>,
+  TError = ErrorType<void>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSharedItinerary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSharedItineraryQueryOptions(token, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

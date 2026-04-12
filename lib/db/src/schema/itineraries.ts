@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -82,6 +82,14 @@ export const itinerariesTable = pgTable("itineraries", {
    * to the current time. Used for "last edited" display and sort-by-recent.
    */
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+
+  /**
+   * @param shareToken — UUID token for the public share link.
+   * Nullable — only set when the user explicitly generates a share link.
+   * Unique constraint ensures tokens are not reused across itineraries.
+   * Generated server-side via `crypto.randomUUID()`.
+   */
+  shareToken: text("share_token").unique(),
 });
 
 /**

@@ -13,6 +13,7 @@
  * | auth          | `/auth/*`            | Varies        | Session-based authentication (register/login)   |
  * | activities    | `/activities/*`      | None          | Public activity browsing and search             |
  * | itineraries   | `/itineraries/*`     | Required      | User itinerary CRUD and item management         |
+ * | shared        | `/shared/*`          | None          | Public shared itinerary view (share token auth) |
  * | chat          | `/chat/*`            | Required      | AI concierge chat (Premium tier only)           |
  * | purchases     | `/purchases/*`       | Required*     | Stripe checkout and webhook processing          |
  * | admin         | `/admin/*`           | Admin only    | Activity management and URL ingestion           |
@@ -30,6 +31,7 @@ import healthRouter from "./health";
 import authRouter from "./auth";
 import activitiesRouter from "./activities";
 import itinerariesRouter from "./itineraries";
+import sharedRouter from "./shared";
 import chatRouter from "./chat";
 import purchasesRouter from "./purchases";
 import adminRouter from "./admin";
@@ -42,6 +44,7 @@ router.use(healthRouter);
 router.use(authRouter);
 router.use(activitiesRouter);
 router.use(itinerariesRouter);
+router.use(sharedRouter);
 router.use(chatRouter);
 router.use(purchasesRouter);
 router.use(adminRouter);

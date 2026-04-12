@@ -32,6 +32,8 @@ export * from "./purchase";
 export * from "./registerBody";
 export * from "./scrapedActivityPreview";
 export * from "./sendMessageBody";
+export * from "./sharedItinerary";
+export * from "./shareResponse";
 export * from "./updateItineraryBody";
 export * from "./updateItineraryItemBody";
 export * from "./userSession";

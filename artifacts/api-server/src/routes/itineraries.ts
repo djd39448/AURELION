@@ -24,6 +24,7 @@
  *   counts per itinerary but should be revisited if item counts grow.
  */
 import { Router } from "express";
+import { randomUUID } from "crypto";
 import { db, itinerariesTable, itineraryItemsTable, activitiesTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import {
@@ -38,6 +39,7 @@ import {
   UpdateItineraryItemBody,
   RemoveItineraryItemParams,
   ExportItineraryParams,
+  ShareItineraryParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 import { canExportItinerary } from "../lib/entitlements";
@@ -392,6 +394,44 @@ router.get("/itineraries/:id/export", async (req, res): Promise<void> => {
     });
   } catch (err) {
     req.log.error({ err }, "Error exporting itinerary");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * @route POST /api/itineraries/:id/share
+ * @auth Required
+ * @returns {{ shareToken: string, shareUrl: string }} The share token and public URL.
+ *   Generates a new UUID share token if one is not already set; otherwise returns
+ *   the existing token (idempotent — calling this multiple times returns the same link).
+ * @throws {400} Invalid ID
+ * @throws {401} Unauthorized
+ * @throws {404} Itinerary not found (or belongs to another user)
+ * @throws {500} Internal server error
+ */
+router.post("/itineraries/:id/share", async (req, res): Promise<void> => {
+  const user = requireAuth(req);
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const params = ShareItineraryParams.safeParse({ id: Number(req.params.id) });
+  if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
+  try {
+    const [itinerary] = await db.select().from(itinerariesTable)
+      .where(and(eq(itinerariesTable.id, params.data.id), eq(itinerariesTable.userId, user.id)));
+    if (!itinerary) { res.status(404).json({ error: "Not found" }); return; }
+
+    // Reuse existing token (idempotent) or generate a fresh UUID
+    const shareToken = itinerary.shareToken ?? randomUUID();
+    if (!itinerary.shareToken) {
+      await db.update(itinerariesTable)
+        .set({ shareToken })
+        .where(eq(itinerariesTable.id, itinerary.id));
+    }
+
+    const origin = req.headers.origin ?? `${req.protocol}://${req.headers.host}`;
+    const shareUrl = `${origin}/shared/${shareToken}`;
+    res.json({ shareToken, shareUrl });
+  } catch (err) {
+    req.log.error({ err }, "Error generating share link");
     res.status(500).json({ error: "Internal server error" });
   }
 });

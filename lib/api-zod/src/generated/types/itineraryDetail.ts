@@ -14,6 +14,7 @@ export interface ItineraryDetail {
   totalDays: number;
   tierType: string;
   status: string;
+  shareToken?: string | null;
   createdAt: string;
   updatedAt: string;
   items: ItineraryItemWithActivity[];
