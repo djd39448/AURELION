@@ -21,8 +21,8 @@
  * keyword matching against the 6 predefined AURELION categories.
  */
 import { Router } from "express";
-import { db, activitiesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, activitiesTable, usersTable, itinerariesTable } from "@workspace/db";
+import { eq, ne, gte, sql } from "drizzle-orm";
 import { AdminCreateActivityBody, AdminUpdateActivityParams, AdminUpdateActivityBody, AdminDeleteActivityParams, AdminIngestUrlBody } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 
@@ -217,6 +217,81 @@ router.post("/admin/ingest", async (req, res): Promise<void> => {
   } catch (err) {
     req.log.error({ err }, "Error ingesting URL");
     res.status(500).json({ error: "Failed to fetch URL" });
+  }
+});
+
+/**
+ * @route GET /api/admin/metrics
+ * @auth Required — `x-admin-secret` header must match the `ADMIN_SECRET` env var.
+ * @returns {AdminMetrics} Platform-wide metrics snapshot:
+ *   - `totalUsers` {number} — All registered users
+ *   - `usersToday` {number} — Users registered since midnight UTC today
+ *   - `totalItineraries` {number} — All itineraries ever created
+ *   - `itinerariesToday` {number} — Itineraries created since midnight UTC today
+ *   - `paidUsers` {number} — Users with tier != 'free'
+ *   - `revenueEstimate` {number} — Estimated revenue: (basic × $9.99) + (premium × $49.99)
+ * @throws {401} Missing or invalid ADMIN_SECRET header
+ * @throws {500} Internal server error
+ *
+ * @remarks
+ * Uses a simple static-secret authentication scheme so the board can view
+ * metrics without needing a registered admin account in the database.
+ * Set `ADMIN_SECRET` in Railway environment variables to a strong random string.
+ */
+router.get("/admin/metrics", async (req, res): Promise<void> => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret || req.headers["x-admin-secret"] !== secret) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+
+    const [totalUsersRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usersTable);
+    const [usersTodayRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usersTable)
+      .where(gte(usersTable.createdAt, todayStart));
+
+    const [totalItinerariesRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(itinerariesTable);
+    const [itinerariesTodayRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(itinerariesTable)
+      .where(gte(itinerariesTable.createdAt, todayStart));
+
+    const [paidUsersRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usersTable)
+      .where(ne(usersTable.tier, "free"));
+    const [basicUsersRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usersTable)
+      .where(eq(usersTable.tier, "basic"));
+    const [premiumUsersRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usersTable)
+      .where(eq(usersTable.tier, "premium"));
+
+    const basicCount = basicUsersRow?.count ?? 0;
+    const premiumCount = premiumUsersRow?.count ?? 0;
+    const revenueEstimate = Math.round((basicCount * 9.99 + premiumCount * 49.99) * 100) / 100;
+
+    res.json({
+      totalUsers: totalUsersRow?.count ?? 0,
+      usersToday: usersTodayRow?.count ?? 0,
+      totalItineraries: totalItinerariesRow?.count ?? 0,
+      itinerariesToday: itinerariesTodayRow?.count ?? 0,
+      paidUsers: paidUsersRow?.count ?? 0,
+      revenueEstimate,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching admin metrics");
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

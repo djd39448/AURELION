@@ -35,6 +35,7 @@ import ItineraryNew from "@/pages/ItineraryNew";
 import ItineraryDetail from "@/pages/ItineraryDetail";
 import Chat from "@/pages/Chat";
 import Admin from "@/pages/Admin";
+import AdminMetrics from "@/pages/AdminMetrics";
 import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
 
@@ -62,6 +63,7 @@ const queryClient = new QueryClient();
  *  - /itineraries/:id      ItineraryDetail (auth required)
  *  - /chat/:sessionId      Chat          (auth + premium tier required)
  *  - /admin                Admin         (auth + admin role required)
+ *  - /admin/metrics        AdminMetrics  (ADMIN_SECRET header required, not in nav)
  *  - *                     NotFound      (catch-all 404)
  *
  * Wouter's `<Switch>` renders only the first matching route.
@@ -86,6 +88,7 @@ function Router() {
           <Route path="/itineraries/:id" component={ItineraryDetail} />
           <Route path="/chat/:sessionId" component={Chat} />
           <Route path="/admin" component={Admin} />
+          <Route path="/admin/metrics" component={AdminMetrics} />
           {/* Catch-all: renders when no route above matches */}
           <Route component={NotFound} />
         </Switch>
