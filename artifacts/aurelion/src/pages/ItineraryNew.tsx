@@ -67,6 +67,8 @@ export default function ItineraryNew() {
         onSuccess: (itinerary) => {
           // Invalidate itinerary list so Dashboard picks up the new entry
           queryClient.invalidateQueries({ queryKey: ["/api/itineraries"] });
+          // Refresh user profile so hasGeneratedItinerary updates and banner dismisses
+          queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
           toast({ title: "Itinerary created", description: "Let's start adding activities." });
           setLocation(`/itineraries/${itinerary.id}`);
         },

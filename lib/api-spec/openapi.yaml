@@ -766,6 +766,8 @@ components:
           type: string
         isAuthenticated:
           type: boolean
+        hasGeneratedItinerary:
+          type: boolean
       required:
         - isAuthenticated
 

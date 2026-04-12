@@ -20,6 +20,7 @@ import { eq } from "drizzle-orm";
 import { hashPassword, verifyPassword } from "../lib/auth";
 import { RegisterBody, LoginBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
+import { sendWelcomeEmail } from "../lib/email";
 
 const router = Router();
 
@@ -49,6 +50,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
       email: usersTable.email,
       role: usersTable.role,
       tier: usersTable.tier,
+      hasGeneratedItinerary: usersTable.hasGeneratedItinerary,
     }).from(usersTable).where(eq(usersTable.id, userId));
 
     if (!user) {
@@ -106,6 +108,8 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     });
     req.session.userId = user.id;
     req.session.user = { ...user, tier: "free" };
+    // Fire-and-forget: don't let email failure block the response
+    sendWelcomeEmail(user.email, user.name).catch(() => {});
     res.status(201).json({ ...user, tier: "free", isAuthenticated: true });
   } catch (err) {
     req.log.error({ err }, "Error registering user");

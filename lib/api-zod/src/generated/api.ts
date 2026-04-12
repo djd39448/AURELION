@@ -120,6 +120,7 @@ export const GetMeResponse = zod.object({
   role: zod.string().optional(),
   tier: zod.string().optional(),
   isAuthenticated: zod.boolean(),
+  hasGeneratedItinerary: zod.boolean().optional(),
 });
 
 /**
@@ -144,7 +145,9 @@ export const LoginResponse = zod.object({
   name: zod.string().optional(),
   email: zod.string().optional(),
   role: zod.string().optional(),
+  tier: zod.string().optional(),
   isAuthenticated: zod.boolean(),
+  hasGeneratedItinerary: zod.boolean().optional(),
 });
 
 /**

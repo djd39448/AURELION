@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -76,6 +76,13 @@ export const usersTable = pgTable("users", {
 
   /** @param aiIndexUpdatedAt — When the AI user index was last regenerated. */
   aiIndexUpdatedAt: timestamp("ai_index_updated_at", { withTimezone: true }),
+
+  /**
+   * @param hasGeneratedItinerary — Whether the user has created their first itinerary.
+   * Starts as false for new users; flipped to true on first POST /api/itineraries.
+   * Used to control the first-run onboarding banner in the dashboard.
+   */
+  hasGeneratedItinerary: boolean("has_generated_itinerary").notNull().default(false),
 
   /**
    * @param createdAt — Timestamp (with timezone) of account creation.

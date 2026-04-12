@@ -24,7 +24,7 @@
  *   counts per itinerary but should be revisited if item counts grow.
  */
 import { Router } from "express";
-import { db, itinerariesTable, itineraryItemsTable, activitiesTable } from "@workspace/db";
+import { db, itinerariesTable, itineraryItemsTable, activitiesTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import {
   CreateItineraryBody,
@@ -93,6 +93,10 @@ router.post("/itineraries", async (req, res): Promise<void> => {
       tierType: "FREE",
       status: "draft",
     }).returning();
+    // Mark first-itinerary flag so the onboarding banner dismisses
+    await db.update(usersTable)
+      .set({ hasGeneratedItinerary: true })
+      .where(and(eq(usersTable.id, user.id), eq(usersTable.hasGeneratedItinerary, false)));
     res.status(201).json({
       ...created,
       createdAt: created.createdAt.toISOString(),

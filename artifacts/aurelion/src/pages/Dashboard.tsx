@@ -18,7 +18,7 @@
  * @tier None required (Premium unlocks AI Concierge button)
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import {
   useGetMe,
@@ -28,7 +28,7 @@ import {
   useCreateChatSession,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Compass, Map, Plus, Shield, MessageSquare, Star } from "lucide-react";
+import { Compass, Map, Plus, Shield, MessageSquare, Star, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
@@ -59,6 +59,9 @@ export default function Dashboard() {
 
   /** Mutation: create a new AI chat session and navigate to /chat/:sessionId on success. */
   const createChat = useCreateChatSession();
+
+  /** Controls local dismiss for the first-run banner (session-only). */
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   /**
    * Auth guard side-effect.
@@ -170,6 +173,37 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* First-run onboarding banner — shown until user generates their first itinerary */}
+      {!user.hasGeneratedItinerary && !bannerDismissed && (
+        <div className="mb-8 bg-primary/10 border border-primary/30 rounded-xl p-5 md:p-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+              <Map className="text-primary w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-serif text-foreground text-base md:text-lg">
+                Generate your first itinerary — it's free!
+              </p>
+              <p className="text-muted-foreground text-sm mt-0.5">
+                Build a personalised Aruba adventure in minutes.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <Button asChild size="sm" className="bg-primary text-primary-foreground font-serif uppercase tracking-widest hidden sm:inline-flex">
+              <Link href="/itineraries/new">Start Now</Link>
+            </Button>
+            <button
+              onClick={() => setBannerDismissed(true)}
+              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+              aria-label="Dismiss banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-12">

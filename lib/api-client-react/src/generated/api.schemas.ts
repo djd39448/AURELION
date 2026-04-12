@@ -75,6 +75,7 @@ export interface UserSession {
   role?: string;
   tier?: string;
   isAuthenticated: boolean;
+  hasGeneratedItinerary?: boolean;
 }
 
 export interface RegisterBody {
