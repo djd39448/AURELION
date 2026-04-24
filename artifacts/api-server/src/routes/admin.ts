@@ -21,7 +21,7 @@
  * keyword matching against the 6 predefined AURELION categories.
  */
 import { Router } from "express";
-import { db, activitiesTable, usersTable, itinerariesTable, waitlistTable } from "@workspace/db";
+import { db, activitiesTable, usersTable, itinerariesTable, waitlistTable, vendorContactsTable, vendorOutreachLogTable } from "@workspace/db";
 import { eq, ne, gte, sql } from "drizzle-orm";
 import { AdminCreateActivityBody, AdminUpdateActivityParams, AdminUpdateActivityBody, AdminDeleteActivityParams, AdminIngestUrlBody } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
@@ -316,6 +316,162 @@ router.get("/admin/waitlist", async (req, res): Promise<void> => {
     res.json({ count: rows.length, emails: rows.map((r) => r.email) });
   } catch (err) {
     req.log.error({ err }, "Error fetching waitlist");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Vendor Relations endpoints — protected by ADMIN_SECRET header
+// ---------------------------------------------------------------------------
+
+function requireAdminSecret(req: import("express").Request, res: import("express").Response): boolean {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret || req.headers["x-admin-secret"] !== secret) {
+    res.status(401).json({ error: "Unauthorized" });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * @route GET /api/admin/vendor-contacts
+ * @auth Required — `x-admin-secret` header must match the `ADMIN_SECRET` env var.
+ * @returns {VendorContact[]} All vendor contacts ordered by provider_id then id.
+ * @throws {401} Missing or invalid ADMIN_SECRET header
+ * @throws {500} Internal server error
+ */
+router.get("/admin/vendor-contacts", async (req, res): Promise<void> => {
+  if (!requireAdminSecret(req, res)) return;
+  try {
+    const contacts = await db
+      .select()
+      .from(vendorContactsTable)
+      .orderBy(vendorContactsTable.providerId, vendorContactsTable.id);
+    res.json(contacts.map((c) => ({
+      ...c,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+      lastContactedAt: c.lastContactedAt?.toISOString() ?? null,
+      lastResponseAt: c.lastResponseAt?.toISOString() ?? null,
+    })));
+  } catch (err) {
+    req.log.error({ err }, "Error fetching vendor contacts");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+const VALID_RELATIONSHIP_STATUSES = ["cold", "contacted", "responded", "active_partner"] as const;
+type RelationshipStatus = typeof VALID_RELATIONSHIP_STATUSES[number];
+
+/**
+ * @route PATCH /api/admin/vendor-contacts/:providerId
+ * @auth Required — `x-admin-secret` header must match the `ADMIN_SECRET` env var.
+ * @body Partial vendor contact fields (contactName, contactEmail, contactPhone,
+ *   relationshipStatus, lastContactedAt, lastResponseAt, notes).
+ * @returns {VendorContact} The updated contact row.
+ * @throws {400} Invalid providerId or body validation failure
+ * @throws {401} Missing or invalid ADMIN_SECRET header
+ * @throws {404} No contact row found for this providerId
+ * @throws {500} Internal server error
+ *
+ * @remarks Updates the first contact row for the given providerId.
+ * If no row exists yet, callers should POST to create one first.
+ */
+router.patch("/admin/vendor-contacts/:providerId", async (req, res): Promise<void> => {
+  if (!requireAdminSecret(req, res)) return;
+  const providerId = Number(req.params.providerId);
+  if (!Number.isInteger(providerId) || providerId <= 0) {
+    res.status(400).json({ error: "Invalid providerId" });
+    return;
+  }
+  const body = req.body as Record<string, unknown>;
+  if (body.relationshipStatus !== undefined && !VALID_RELATIONSHIP_STATUSES.includes(body.relationshipStatus as RelationshipStatus)) {
+    res.status(400).json({ error: `relationshipStatus must be one of: ${VALID_RELATIONSHIP_STATUSES.join(", ")}` });
+    return;
+  }
+  try {
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    if (body.contactName !== undefined) patch.contactName = body.contactName ?? null;
+    if (body.contactEmail !== undefined) patch.contactEmail = body.contactEmail ?? null;
+    if (body.contactPhone !== undefined) patch.contactPhone = body.contactPhone ?? null;
+    if (body.relationshipStatus !== undefined) patch.relationshipStatus = body.relationshipStatus as RelationshipStatus;
+    if (body.lastContactedAt !== undefined) patch.lastContactedAt = body.lastContactedAt ? new Date(body.lastContactedAt as string) : null;
+    if (body.lastResponseAt !== undefined) patch.lastResponseAt = body.lastResponseAt ? new Date(body.lastResponseAt as string) : null;
+    if (body.notes !== undefined) patch.notes = body.notes ?? null;
+
+    const [updated] = await db
+      .update(vendorContactsTable)
+      .set(patch)
+      .where(eq(vendorContactsTable.providerId, providerId))
+      .returning();
+    if (!updated) {
+      res.status(404).json({ error: "No vendor contact found for this providerId" });
+      return;
+    }
+    res.json({
+      ...updated,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+      lastContactedAt: updated.lastContactedAt?.toISOString() ?? null,
+      lastResponseAt: updated.lastResponseAt?.toISOString() ?? null,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error updating vendor contact");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+const VALID_OUTREACH_DIRECTIONS = ["outbound", "inbound"] as const;
+type OutreachDirection = typeof VALID_OUTREACH_DIRECTIONS[number];
+
+/**
+ * @route POST /api/admin/vendor-outreach-log
+ * @auth Required — `x-admin-secret` header must match the `ADMIN_SECRET` env var.
+ * @body Required: providerId (int), direction ("outbound"|"inbound"), subject (string), body (string).
+ *   Optional: sentAt (ISO timestamp, defaults to now), resendMessageId, notes.
+ * @returns {VendorOutreachLog} The newly created log entry (HTTP 201).
+ * @throws {400} Body validation failure
+ * @throws {401} Missing or invalid ADMIN_SECRET header
+ * @throws {500} Internal server error
+ */
+router.post("/admin/vendor-outreach-log", async (req, res): Promise<void> => {
+  if (!requireAdminSecret(req, res)) return;
+  const data = req.body as Record<string, unknown>;
+  if (!Number.isInteger(data.providerId) || (data.providerId as number) <= 0) {
+    res.status(400).json({ error: "providerId must be a positive integer" });
+    return;
+  }
+  if (!VALID_OUTREACH_DIRECTIONS.includes(data.direction as OutreachDirection)) {
+    res.status(400).json({ error: `direction must be one of: ${VALID_OUTREACH_DIRECTIONS.join(", ")}` });
+    return;
+  }
+  if (!data.subject || typeof data.subject !== "string") {
+    res.status(400).json({ error: "subject is required" });
+    return;
+  }
+  if (!data.body || typeof data.body !== "string") {
+    res.status(400).json({ error: "body is required" });
+    return;
+  }
+  try {
+    const [created] = await db
+      .insert(vendorOutreachLogTable)
+      .values({
+        providerId: data.providerId as number,
+        direction: data.direction as OutreachDirection,
+        subject: data.subject as string,
+        body: data.body as string,
+        sentAt: data.sentAt ? new Date(data.sentAt as string) : new Date(),
+        resendMessageId: (data.resendMessageId as string | undefined) ?? null,
+        notes: (data.notes as string | undefined) ?? null,
+      })
+      .returning();
+    res.status(201).json({
+      ...created,
+      sentAt: created.sentAt.toISOString(),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error logging vendor outreach");
     res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -51,3 +51,5 @@ export * from "./purchases";
 export * from "./chat";
 export * from "./user-memories";
 export * from "./waitlist";
+export * from "./vendor-contacts";
+export * from "./vendor-outreach-log";
